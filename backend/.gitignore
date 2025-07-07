@@ -1,0 +1,56 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# dotenv environment variables
+.env
+.env.local
+.env.*.local
+
+# Optional npm cache directory
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# Parcel-bundler cache
+.cache/
+
+# TypeScript
+dist/
+build/
+*.tsbuildinfo
+
+# MacOS system files
+.DS_Store
+
+# VSCode settings
+.vscode/
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Next.js
+.next/
+
+# Nuxt.js
+.nuxt/
+
+# Svelte
+.svelte-kit/
+
+# Remotion
+.remotion/
