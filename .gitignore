@@ -1,0 +1,51 @@
+# ========== Node.js (backend) ==========
+/backend/node_modules/
+/backend/.env
+/backend/dist/
+/backend/build/
+/backend/coverage/
+/backend/npm-debug.log*
+/backend/yarn-debug.log*
+/backend/yarn-error.log*
+/backend/pnpm-debug.log*
+
+# ========== Next.js (frontend) ==========
+/frontend/.next/
+/frontend/node_modules/
+/frontend/.env
+/frontend/out/
+/frontend/.vercel/
+/frontend/coverage/
+/frontend/.turbo/
+/frontend/trace
+/frontend/logs/
+/frontend/build/
+/frontend/npm-debug.log*
+
+# ========== Android Native (mobile_app) ==========
+/mobile_app/.gradle/
+/mobile_app/.idea/
+/mobile_app/local.properties
+/mobile_app/.DS_Store
+/mobile_app/build/
+/mobile_app/captures/
+/mobile_app/.externalNativeBuild/
+/mobile_app/app/build/
+/mobile_app/.cxx/
+/mobile_app/.settings/
+/mobile_app/.project
+
+# ========== General ==========
+*.iml
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.swn
+
+.vscode/
+.idea/
+
+# MacOS junk
+.DS_Store
