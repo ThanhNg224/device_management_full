@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var client: WebSocketClient
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
-    private lateinit var webServer: SimpleWebServer
+
 
 
     private var imei by mutableStateOf("Đang kiểm tra...")
