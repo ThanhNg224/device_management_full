@@ -34,18 +34,37 @@ class ApkUpdateManager(
     }
 
     fun downloadAndInstall(apkUrl: String, filename: String, namePackage: String) {
-        // 1. Chuẩn bị IntentFilter
+        Log.d("ApkUpdateMgr", "⬇️ Starting download for: $filename")
+        Log.d("ApkUpdateMgr", "🔗 APK URL: $apkUrl")
+        Log.d("ApkUpdateMgr", "📦 Target package: $namePackage")
+        Log.d("ApkUpdateMgr", "🤖 Controller app package: ${context.packageName}")
+
+        // (Optional) Giới hạn cài đặt cho 1 số gói cụ thể – nếu bạn muốn
+        val allowedTargets = listOf("com.atin.arcface", "com.sunworld.terminal") // Thay đổi tùy bạn
+
+        if (namePackage !in allowedTargets) {
+            Log.w("ApkUpdateMgr", "⚠️ Warning: installing unlisted package $namePackage")
+            // Bạn có thể return false ở đây nếu muốn chặn hoàn toàn
+            // onResult(false)
+            // return
+        }
+
+        // Đăng ký receiver để lắng nghe khi download hoàn tất
         val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
 
-        // 2. Đăng ký receiver luôn với flag not exported
-        ContextCompat.registerReceiver(
-            context,
-            downloadReceiver,
-            filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED  // <-- phải là ContextCompat.RECEIVER_NOT_EXPORTED
-        )
+        try {
+            context.applicationContext.registerReceiver(
+                downloadReceiver,
+                filter
+            )
+            Log.d("ApkUpdateMgr", "✅ Registered download complete receiver")
+        } catch (e: Exception) {
+            Log.e("ApkUpdateMgr", "❌ Failed to register receiver", e)
+            onResult(false)
+            return
+        }
 
-        // 3. Tạo và enqueue download request
+        // Tạo yêu cầu download file APK
         val request = DownloadManager.Request(Uri.parse(apkUrl)).apply {
             setTitle("Updating $namePackage")
             setDescription("Downloading APK update...")
@@ -56,14 +75,17 @@ class ApkUpdateManager(
         }
 
         downloadId = downloadManager.enqueue(request)
-        apkFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            filename
-        )
+        apkFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename)
+
+        Log.d("ApkUpdateMgr", "📥 Enqueued download with ID: $downloadId")
     }
 
 
+
+
     private fun handleDownloadComplete() {
+        Log.d("ApkUpdateMgr", "📥 Download completed. Verifying...")
+
         val query = DownloadManager.Query().setFilterById(downloadId)
         val cursor: Cursor = downloadManager.query(query)
 
@@ -72,59 +94,86 @@ class ApkUpdateManager(
 
             when (status) {
                 DownloadManager.STATUS_SUCCESSFUL -> {
+                    Log.d("ApkUpdateMgr", "✅ Download successful, starting installApk()")
                     cursor.close()
                     installApk()
                 }
                 DownloadManager.STATUS_FAILED -> {
+                    Log.e("ApkUpdateMgr", "❌ Download failed")
                     cursor.close()
                     cleanup()
                     onResult(false)
                 }
             }
         } else {
+            Log.e("ApkUpdateMgr", "❌ No cursor found for download ID")
             cursor.close()
             cleanup()
             onResult(false)
         }
     }
 
+
     private fun installApk() {
+        Log.d("ApkUpdateMgr", "📦 installApk() called")
         apkFile?.let { file ->
             if (file.exists()) {
+                Log.d("ApkUpdateMgr", "📁 APK file exists at: ${file.absolutePath}")
                 if (isDeviceRooted()) {
+                    Log.d("ApkUpdateMgr", "✅ Device is rooted, installing via root")
                     installViaRoot(file)
                 } else {
+                    Log.d("ApkUpdateMgr", "⚠️ Not rooted, using install via intent")
                     installViaIntent(file)
                 }
             } else {
+                Log.e("ApkUpdateMgr", "❌ APK file does not exist: ${file.absolutePath}")
                 cleanup()
                 onResult(false)
             }
         } ?: run {
+            Log.e("ApkUpdateMgr", "❌ apkFile is null")
             cleanup()
             onResult(false)
         }
     }
 
+
     private fun isDeviceRooted(): Boolean {
         return try {
-            val process = Runtime.getRuntime().exec("su -c 'echo test'")
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "echo rooted_check"))
+            val output = process.inputStream.bufferedReader().readText()
             val exitCode = process.waitFor()
+            Log.d("ApkUpdateMgr", "🔍 su test output: $output, exitCode=$exitCode")
             exitCode == 0
         } catch (e: Exception) {
+            Log.e("ApkUpdateMgr", "❌ su test failed", e)
             false
         }
     }
 
+
     private fun installViaRoot(file: File) {
-        val cmd = "pm install -r ${file.absolutePath}"
-        Log.d("ApkUpdateMgr", "🔧 Running: su -c \"$cmd\"")
+        val tmpPath = "/data/local/tmp/${file.name}"
+        val copyCmd = "cp ${file.absolutePath} $tmpPath && chmod 644 $tmpPath"
+        val installCmd = "pm install -r $tmpPath"
+        val fullCmd = "$copyCmd && $installCmd"
+
+        Log.d("ApkUpdateMgr", "🔧 Running root install via: su -c \"$fullCmd\"")
+
         try {
-            val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-            val exit = proc.waitFor()
-            Log.d("ApkUpdateMgr", "🔧 Install exit code = $exit")
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", fullCmd))
+
+            val stdout = process.inputStream.bufferedReader().readText()
+            val stderr = process.errorStream.bufferedReader().readText()
+            val exitCode = process.waitFor()
+
+            Log.d("ApkUpdateMgr", "📤 STDOUT:\n$stdout")
+            Log.e("ApkUpdateMgr", "⚠️ STDERR:\n$stderr")
+            Log.d("ApkUpdateMgr", "🔚 Exit code: $exitCode")
+
             cleanup()
-            onResult(exit == 0)
+            onResult(exitCode == 0)
         } catch (e: Exception) {
             Log.e("ApkUpdateMgr", "❌ installViaRoot failed", e)
             cleanup()
@@ -133,29 +182,34 @@ class ApkUpdateManager(
     }
 
 
+
+
     private fun installViaIntent(file: File) {
         try {
             val uri = FileProvider.getUriForFile(
                 context,
-                "${context.packageName}.provider",
+                "${context.packageName}.provider", // phải đúng authority trong AndroidManifest
                 file
             )
 
+            Log.d("ApkUpdateMgr", "📦 Installing via intent using URI: $uri")
+
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, "application/vnd.android.package-archive")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
 
             context.startActivity(intent)
 
-            // For non-root installation, we assume success since user interaction is required
-            cleanup()
+            // Assumes user will accept install
             onResult(true)
         } catch (e: Exception) {
-            cleanup()
+            Log.e("ApkUpdateMgr", "❌ installViaIntent failed", e)
             onResult(false)
         }
     }
+
 
     private fun cleanup() {
         try {
