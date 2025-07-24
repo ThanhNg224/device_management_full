@@ -32,6 +32,7 @@ class GetHardWarePerformance(
         }
     }
 
+
     /** Tính tổng phần trăm CPU sử dụng trên toàn hệ thống */
     private fun getTotalCpuUsage(): Float {
         return try {

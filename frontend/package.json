@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check-env": "node scripts/check-env.js",
+    "prebuild": "npm run check-env"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",

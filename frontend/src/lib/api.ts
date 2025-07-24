@@ -1,6 +1,39 @@
+/**
+ * Helper function to get the API base URL from environment variables
+ * In production, this MUST be set via NEXT_PUBLIC_API_URL
+ * In development, falls back to localhost:3000
+ */
+function getApiBaseUrl(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  
+  // In production, we should always have the environment variable set
+  if (process.env.NODE_ENV === 'production' && !apiUrl) {
+    console.error('NEXT_PUBLIC_API_URL is not set in production environment!')
+    throw new Error('API URL configuration missing in production')
+  }
+  
+  // Development fallback
+  return apiUrl || 'http://localhost:3000'
+}
+
+/**
+ * Helper function to build API URLs consistently
+ * @param endpoint - The API endpoint path (should start with /)
+ * @returns Complete API URL
+ */
+function buildApiUrl(endpoint: string): string {
+  const baseUrl = getApiBaseUrl()
+  return `${baseUrl}${endpoint}`
+}
+
 export async function fetchDevices() {
   try {
-    const response = await fetch("/api/device/listDevice", {
+    // Using environment variable for API URL with fallback to relative path for Next.js rewrites
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+      ? buildApiUrl('/api/device/listDevice')
+      : "/api/device/listDevice"
+    
+    const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -68,10 +101,11 @@ export async function uploadApk(file: File, deviceSerial: string): Promise<{ apk
     formData.append('fileApk', file)
     formData.append('devices', JSON.stringify([{ serial: deviceSerial }]))
 
-    const response = await fetch('http://192.168.1.157:3000/api/upload-apk', {
+    // Using environment variable for API URL with fallback
+    const response = await fetch(buildApiUrl('/api/upload-apk'), {
       method: "POST",
       body: formData,
-      signal: AbortSignal.timeout(30000), // 30 second timeout for file upload
+      signal: AbortSignal.timeout(20000), // 20 second timeout for file upload
     })
 
     if (!response.ok) {
@@ -94,7 +128,8 @@ export async function uploadApk(file: File, deviceSerial: string): Promise<{ apk
 
 export async function fetchDeviceLogs() {
   try {
-    const response = await fetch("http://192.168.1.157:3000/api/deviceLog/getListDeviceLog", {
+    // Using environment variable for API URL with fallback
+    const response = await fetch(buildApiUrl('/api/deviceLog/getListDeviceLog'), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

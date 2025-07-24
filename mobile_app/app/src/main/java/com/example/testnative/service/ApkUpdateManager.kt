@@ -39,21 +39,19 @@ class ApkUpdateManager(
         Log.d("ApkUpdateMgr", "📦 Target package: $namePackage")
         Log.d("ApkUpdateMgr", "🤖 Controller app package: ${context.packageName}")
 
-        // (Optional) Giới hạn cài đặt cho 1 số gói cụ thể – nếu bạn muốn
-        val allowedTargets = listOf("com.atin.arcface", "com.sunworld.terminal") // Thay đổi tùy bạn
+        // Giới hạn cài đặt cho 1 số package cụ thể
+        val allowedTargets = listOf("com.atin.arcface", "com.sunworld.terminal")
 
         if (namePackage !in allowedTargets) {
             Log.w("ApkUpdateMgr", "⚠️ Warning: installing unlisted package $namePackage")
-            // Bạn có thể return false ở đây nếu muốn chặn hoàn toàn
-            // onResult(false)
-            // return
+
         }
 
         // Đăng ký receiver để lắng nghe khi download hoàn tất
         val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
 
         try {
-            context.applicationContext.registerReceiver(
+             context.applicationContext.registerReceiver(
                 downloadReceiver,
                 filter
             )
@@ -159,7 +157,7 @@ class ApkUpdateManager(
         val installCmd = "pm install -r $tmpPath"
         val fullCmd = "$copyCmd && $installCmd"
 
-        Log.d("ApkUpdateMgr", "🔧 Running root install via: su -c \"$fullCmd\"")
+        Log.d("ApkUpdateMgr", "Running root install via: su -c \"$fullCmd\"")
 
         try {
             val process = Runtime.getRuntime().exec(arrayOf("su", "-c", fullCmd))
@@ -168,9 +166,9 @@ class ApkUpdateManager(
             val stderr = process.errorStream.bufferedReader().readText()
             val exitCode = process.waitFor()
 
-            Log.d("ApkUpdateMgr", "📤 STDOUT:\n$stdout")
-            Log.e("ApkUpdateMgr", "⚠️ STDERR:\n$stderr")
-            Log.d("ApkUpdateMgr", "🔚 Exit code: $exitCode")
+            Log.d("ApkUpdateMgr", "STDOUT:\n$stdout")
+            Log.e("ApkUpdateMgr", "⚠STDERR:\n$stderr")
+            Log.d("ApkUpdateMgr", "Exit code: $exitCode")
 
             cleanup()
             onResult(exitCode == 0)
@@ -202,7 +200,7 @@ class ApkUpdateManager(
 
             context.startActivity(intent)
 
-            // Assumes user will accept install
+
             onResult(true)
         } catch (e: Exception) {
             Log.e("ApkUpdateMgr", "❌ installViaIntent failed", e)
@@ -215,7 +213,7 @@ class ApkUpdateManager(
         try {
             context.unregisterReceiver(downloadReceiver)
         } catch (e: Exception) {
-            // Receiver might not be registered
+
         }
 
         apkFile?.let { file ->
