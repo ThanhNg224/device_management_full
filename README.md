@@ -15,3 +15,6 @@
 - Socket-based real-time communication
 
 This tool is designed for internal deployment in enterprise environments where device fleets need to be maintained efficiently and securely.
+<img width="2462" height="1340" alt="image" src="https://github.com/user-attachments/assets/7e07803e-d385-4314-916b-e2380c9fcea5" />
+
+<img width="2455" height="1349" alt="image" src="https://github.com/user-attachments/assets/38374239-b948-4181-8de3-7921179f38e5" />
