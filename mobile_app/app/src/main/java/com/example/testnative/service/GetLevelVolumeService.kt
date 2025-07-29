@@ -6,7 +6,7 @@ import android.os.Handler
 import android.os.Looper
 
 class GetLevelVolumeService(
-    private val context: Context,
+    context: Context,
     private val onChanged: (Int) -> Unit
 ) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager

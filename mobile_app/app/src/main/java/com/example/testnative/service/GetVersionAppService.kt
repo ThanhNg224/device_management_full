@@ -9,7 +9,7 @@ class GetVersionAppService(private val context: Context) {
         return try {
             val packageInfo = context.packageManager.getPackageInfo("com.atin.arcface", 0)
             packageInfo.versionName ?: "unknown"
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (_: PackageManager.NameNotFoundException) {
             "unknown"
         }
     }

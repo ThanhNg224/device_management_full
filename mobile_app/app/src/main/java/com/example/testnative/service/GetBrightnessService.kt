@@ -25,7 +25,7 @@ class GetBrightnessService(
                     Settings.System.SCREEN_BRIGHTNESS
                 )
                 (brightness * 100) / 255
-            } catch (e: Settings.SettingNotFoundException) {
+            } catch (_: Settings.SettingNotFoundException) {
                 0
             }
         }
