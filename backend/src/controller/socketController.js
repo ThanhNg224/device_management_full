@@ -45,6 +45,18 @@ const websocketController = (server) => {
       clients.delete(ws);
     });
   });
+
+  setInterval(async () => {
+    const now = Date.now();
+    for (const [ws, info] of clients) {
+      if (now - info.lastPing > 5000) {
+        console.log(`⚠️ Device ${info.deviceCode} timeout`);
+        await Device.findOneAndUpdate({ deviceCode: info.deviceCode }, { $set: { status: 0 } });
+        clients.delete(ws);
+        ws.terminate();
+      }
+    }
+  }, 30000);
 };
 
 module.exports = {websocketController, clients};
