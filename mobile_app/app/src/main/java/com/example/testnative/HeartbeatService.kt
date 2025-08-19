@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -50,8 +51,9 @@ class HeartbeatService : Service() {
         // Khởi tạo các service
         serialService = GetImeiNumberService(this)
         versionApp = GetVersionAppService(this)
-        client = WebSocketClient(applicationContext)
-
+        val sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        val serverIp = sharedPreferences.getString("server_ip", "") ?: ""
+        client = WebSocketClient(applicationContext, serverIp)
 
         // Volume
         volume = GetLevelVolumeService(this) {
@@ -126,6 +128,15 @@ class HeartbeatService : Service() {
     }
 
     private fun sendHeartbeat() {
+        client.currentConfig = JSONObject().apply {
+            put("brightness", brightnessPercent)
+            put("volume", volumePercent)
+        }
+        client.currentPerformance = JSONObject().apply {
+            put("cpu", cpuPercent * 100)
+            put("ram", ramPercent * 100)
+            put("temp", tempCelsius)
+        }
         client.sendHeartbeat(
             config = JSONObject().apply {
                 put("brightness", brightnessPercent)

@@ -22,7 +22,7 @@ class GetHardWarePerformance(
             val ram = getRamUsage()
             val temp = getCpuTemperature()
 
-            Log.d("Hardware", "CPU: ${cpu * 100}%, RAM: ${ram * 100}%, Temp: $temp°C")
+//            Log.d("Hardware", "CPU: ${cpu * 100}%, RAM: ${ram * 100}%, Temp: $temp°C")
 
             onUpdate(cpu, ram, temp)
 
