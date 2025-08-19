@@ -210,7 +210,7 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                       }
                     `}
                   >
-                    {device.lastPerformance.cpu.toFixed(2)}%
+                    {(device.lastPerformance?.cpu ?? 0).toFixed(2)}%
                   </Badge>
                   <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
                     <div
@@ -245,7 +245,7 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                       }
                     `}
                   >
-                    {device.lastPerformance.ram.toFixed(2)}%
+                    {(device.lastPerformance?.ram ?? 0).toFixed(2)}%
                   </Badge>
                   <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
                     <div
@@ -271,12 +271,12 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                     variant="outline"
                     className="text-sm font-semibold border-2 border-blue-300 bg-blue-50 text-blue-700 min-w-[60px] justify-center"
                   >
-                    {device.lastPerformance.temp.toFixed(2)}°C
+                    {(device.lastPerformance?.temperature ?? 0).toFixed(2)}°C
                   </Badge>
                   <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full transition-all duration-300 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
-                      style={{ width: `${Math.min(device.lastPerformance.temp, 100)}%` }}
+                      style={{ width: `${Math.min(device.lastPerformance.temperature, 100)}%` }}
                     />
                   </div>
                 </div>

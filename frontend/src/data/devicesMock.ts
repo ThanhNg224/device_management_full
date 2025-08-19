@@ -7,7 +7,7 @@ export const mockDevices: Device[] = [
     lastConnected: "2024-01-20 14:30:25",
     location: "Building A - Floor 1",
     version: "v2.1.3",
-    lastPerformance: { cpu: 45, ram: 62, temp: 68 },
+    lastPerformance: { cpu: 45, ram: 62, temperature: 68 },
     unitCompany: "SunWorld Corp",
     deviceName: "Main Entrance Scanner",
     description: "Primary access control device for building entrance",
@@ -22,6 +22,10 @@ export const mockDevices: Device[] = [
     autoReboot: true,
     soundEnabled: true,
     ledEnabled: true,
+    config: {
+      volume: 75,
+      brightness: 80,
+    },
   },
   {
     deviceCode: "DEV-002",
@@ -29,7 +33,7 @@ export const mockDevices: Device[] = [
     lastConnected: "2024-01-19 09:15:42",
     location: "Building B - Floor 2",
     version: "v2.0.8",
-    lastPerformance: { cpu: 78, ram: 84, temp: 82 },
+    lastPerformance: { cpu: 78, ram: 84, temperature: 82 },
     unitCompany: "SunWorld Corp",
     deviceName: "Office Access Point",
     description: "Secondary access control for office area",
@@ -44,6 +48,10 @@ export const mockDevices: Device[] = [
     autoReboot: false,
     soundEnabled: false,
     ledEnabled: true,
+    config: {
+      volume: 60,
+      brightness: 70,
+    },
   },
   {
     deviceCode: "DEV-003",
@@ -51,7 +59,7 @@ export const mockDevices: Device[] = [
     lastConnected: "2024-01-20 16:45:12",
     location: "Building A - Floor 3",
     version: "v2.1.3",
-    lastPerformance: { cpu: 23, ram: 41, temp: 55 },
+    lastPerformance: { cpu: 23, ram: 41, temperature: 55 },
     unitCompany: "SunWorld Corp",
     deviceName: "Executive Floor Scanner",
     description: "High-security access control for executive floor",
@@ -66,6 +74,10 @@ export const mockDevices: Device[] = [
     autoReboot: true,
     soundEnabled: true,
     ledEnabled: true,
+    config: {
+      volume: 85,
+      brightness: 90,
+    },
   },
   {
     deviceCode: "DEV-004",
@@ -73,7 +85,7 @@ export const mockDevices: Device[] = [
     lastConnected: "2024-01-20 17:22:08",
     location: "Building C - Entrance",
     version: "v2.1.1",
-    lastPerformance: { cpu: 56, ram: 73, temp: 72 },
+    lastPerformance: { cpu: 56, ram: 73, temperature: 72 },
     unitCompany: "SunWorld Corp",
     deviceName: "Visitor Access Terminal",
     description: "Visitor registration and access control terminal",
@@ -88,6 +100,10 @@ export const mockDevices: Device[] = [
     autoReboot: true,
     soundEnabled: true,
     ledEnabled: false,
+    config: {
+      volume: 70,
+      brightness: 65,
+    },
   },
   {
     deviceCode: "DEV-005",
@@ -95,7 +111,7 @@ export const mockDevices: Device[] = [
     lastConnected: "2024-01-18 11:30:15",
     location: "Building B - Floor 1",
     version: "v1.9.2",
-    lastPerformance: { cpu: 89, ram: 91, temp: 95 },
+    lastPerformance: { cpu: 89, ram: 91, temperature: -127 }, // Special case: sensor error, should default to 30°C
     unitCompany: "SunWorld Corp",
     deviceName: "Cafeteria Access Point",
     description: "Access control for cafeteria and common areas",
@@ -110,5 +126,9 @@ export const mockDevices: Device[] = [
     autoReboot: false,
     soundEnabled: true,
     ledEnabled: true,
+    config: {
+      volume: 50,
+      brightness: 55,
+    },
   },
 ]

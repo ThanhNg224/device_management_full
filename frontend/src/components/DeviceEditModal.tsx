@@ -42,7 +42,7 @@ export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditM
     }
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setEditedDevice(prev => {
       if (!prev) return null
       return { ...prev, [field]: value }

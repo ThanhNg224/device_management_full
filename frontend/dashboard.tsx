@@ -1,22 +1,49 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./src/components/AppSidebar"
 import { DeviceTable } from "./src/components/DeviceTable"
 import { DeviceLogsTable } from "./src/components/DeviceLogsTable"
+import { ToastProvider } from "./src/components/Toast"
 import { fetchDevices } from "./src/lib/api"
 import { mockLogs } from "./src/data/logsMock"
 import { mockDevices } from "./src/data/devicesMock"
 import type { Device } from "./src/types"
 
-export default function Component() {
-  const [activeTab, setActiveTab] = React.useState("devices")
+function DashboardContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
+  // Get tab from URL, default to "devices" if not present
+  const [activeTab, setActiveTab] = React.useState(() => {
+    return searchParams.get('tab') || "devices"
+  })
+  
   const [mounted, setMounted] = React.useState(false)
   const [devices, setDevices] = React.useState<Device[]>([]) // Initialize as empty array
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+
+  // Function to change tab and update URL
+  const handleTabChange = React.useCallback((newTab: string) => {
+    setActiveTab(newTab)
+    // Update URL without causing a page reload
+    const newUrl = new URL(window.location.href)
+    newUrl.searchParams.set('tab', newTab)
+    router.replace(newUrl.pathname + newUrl.search, { scroll: false })
+  }, [router])
+
+  // Listen for URL changes (browser back/forward)
+  React.useEffect(() => {
+    const currentTab = searchParams.get('tab') || "devices"
+    if (currentTab !== activeTab) {
+      setActiveTab(currentTab)
+    }
+  }, [searchParams, activeTab])
 
   // Add function to update a device
   const updateDevice = React.useCallback((updatedDevice: Device) => {
@@ -68,9 +95,10 @@ export default function Component() {
   if (!mounted) return null
 
   return (
-    <SidebarProvider>
-      <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <SidebarInset>
+    <ToastProvider>
+      <SidebarProvider>
+        <AppSidebar activeTab={activeTab} setActiveTab={handleTabChange} />
+        <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
@@ -100,5 +128,31 @@ export default function Component() {
         </main>
       </SidebarInset>
     </SidebarProvider>
+    </ToastProvider>
+  )
+}
+
+// Loading component for Suspense fallback
+function DashboardLoading() {
+  return (
+    <div className="flex h-screen w-full animate-pulse">
+      <div className="w-64 bg-muted border-r"></div>
+      <div className="flex-1">
+        <div className="h-16 border-b bg-background"></div>
+        <div className="p-6 space-y-4">
+          <div className="h-8 bg-muted rounded w-1/4"></div>
+          <div className="h-32 bg-muted rounded"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main component wrapped with Suspense
+export default function Component() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
   )
 }
