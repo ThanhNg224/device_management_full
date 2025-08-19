@@ -1,5 +1,5 @@
 "use client"
-import { Plus, Eye, Circle, Settings, Download } from "lucide-react"
+import { Plus, Eye, Circle, Settings, Download, Copy } from "lucide-react"
 import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,8 @@ import type { Device } from "../types"
 import { DeviceDetailsModal } from "./DeviceDetailsModal"
 import { DeviceEditModal } from "./DeviceEditModal"
 import { uploadApk } from "../lib/api"
+import { copyWithToast } from "../lib/clipboard"
+import { useToast } from "./Toast"
 
 interface DeviceTableProps {
   devices: Device[]
@@ -21,6 +23,7 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [isUpdating, setIsUpdating] = React.useState<string | null>(null) // Track which device is updating
+  const { showToast } = useToast()
 
   const handleViewDetails = (device: Device) => {
     setSelectedDevice(device)
@@ -46,6 +49,14 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
   const handleSaveDevice = (updatedDevice: Device) => {
     onUpdateDevice(updatedDevice)
     console.log("Device updated:", updatedDevice)
+  }
+
+  const handleCopyDeviceCode = async (deviceCode: string) => {
+    await copyWithToast(
+      deviceCode,
+      () => showToast(`Device code "${deviceCode}" copied to clipboard!`, 'success'),
+      (error) => showToast(error, 'error')
+    )
   }
 
   const handleUpdateDevice = async (device: Device) => {
@@ -81,8 +92,8 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
       try {
         // Upload APK file and send update to device (backend handles both)
         console.log("Uploading APK file and sending update to device:", file.name)
-        const { apkUrl } = await uploadApk(file, device.deviceCode)
-        console.log("APK uploaded and update sent successfully, URL:", apkUrl)
+        const { downloadUrl } = await uploadApk(file, device.deviceCode)
+        console.log("APK uploaded and update sent successfully, URL:", downloadUrl)
         
         // Show success message
         alert(`Update sent successfully to device ${device.deviceCode}`)
@@ -133,7 +144,7 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                   <TableHead className="font-bold text-foreground">Version</TableHead>
                   <TableHead className="font-bold text-foreground">CPU</TableHead>
                   <TableHead className="font-bold text-foreground">RAM</TableHead>
-                  <TableHead className="font-bold text-foreground">Temp</TableHead>
+                  <TableHead className="font-bold text-foreground">Temperature</TableHead>
                   <TableHead className="font-bold text-foreground text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -146,7 +157,20 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                       ${index % 2 === 0 ? "bg-background" : "bg-muted/20"}
                     `}
                   >
-                    <TableCell className="font-semibold py-3">{device.deviceCode}</TableCell>
+                    <TableCell className="font-semibold py-3">
+                      <div className="flex items-center gap-2">
+                        <span>{device.deviceCode}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                          onClick={() => handleCopyDeviceCode(device.deviceCode)}
+                          title="Copy device code"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={device.status === "Online" ? "default" : "destructive"}
@@ -179,29 +203,29 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                           className={`
                             text-xs font-semibold border-2
                             ${
-                              device.lastPerformance.cpu > 80
+                              (device.lastPerformance?.cpu ?? 0) > 80
                                 ? "border-red-300 bg-red-50 text-red-700"
-                                : device.lastPerformance.cpu > 60
+                                : (device.lastPerformance?.cpu ?? 0) > 60
                                   ? "border-yellow-300 bg-yellow-50 text-yellow-700"
                                   : "border-green-300 bg-green-50 text-green-700"
                             }
                           `}
                         >
-                          {device.lastPerformance.cpu.toFixed(2)}%
+                          {(device.lastPerformance?.cpu ?? 0).toFixed(2)}%
                         </Badge>
                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`
                               h-full transition-all duration-300 rounded-full
                               ${
-                                device.lastPerformance.cpu > 80
+                                (device.lastPerformance?.cpu ?? 0) > 80
                                   ? "bg-gradient-to-r from-red-400 to-red-600"
-                                  : device.lastPerformance.cpu > 60
+                                  : (device.lastPerformance?.cpu ?? 0) > 60
                                     ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
                                     : "bg-gradient-to-r from-green-400 to-green-600"
                               }
                             `}
-                            style={{ width: `${device.lastPerformance.cpu}%` }}
+                            style={{ width: `${device.lastPerformance?.cpu ?? 0}%` }}
                           />
                         </div>
                       </div>
@@ -213,29 +237,29 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                           className={`
                             text-xs font-semibold border-2
                             ${
-                              device.lastPerformance.ram > 80
+                              (device.lastPerformance?.ram ?? 0) > 80
                                 ? "border-red-300 bg-red-50 text-red-700"
-                                : device.lastPerformance.ram > 60
+                                : (device.lastPerformance?.ram ?? 0) > 60
                                   ? "border-yellow-300 bg-yellow-50 text-yellow-700"
                                   : "border-green-300 bg-green-50 text-green-700"
                             }
                           `}
                         >
-                          {device.lastPerformance.ram.toFixed(2)}%
+                          {(device.lastPerformance?.ram ?? 0).toFixed(2)}%
                         </Badge>
                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`
                               h-full transition-all duration-300 rounded-full
                               ${
-                                device.lastPerformance.ram > 80
+                                (device.lastPerformance?.ram ?? 0) > 80
                                   ? "bg-gradient-to-r from-red-400 to-red-600"
-                                  : device.lastPerformance.ram > 60
+                                  : (device.lastPerformance?.ram ?? 0) > 60
                                     ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
                                     : "bg-gradient-to-r from-green-400 to-green-600"
                               }
                             `}
-                            style={{ width: `${device.lastPerformance.ram}%` }}
+                            style={{ width: `${device.lastPerformance?.ram ?? 0}%` }}
                           />
                         </div>
                       </div>
@@ -247,29 +271,29 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                           className={`
                             text-xs font-semibold border-2
                             ${
-                              device.lastPerformance.temp > 80
+                              (device.lastPerformance?.temperature ?? 0) > 80
                                 ? "border-red-300 bg-red-50 text-red-700"
-                                : device.lastPerformance.temp > 60
+                                : (device.lastPerformance?.temperature ?? 0) > 60
                                   ? "border-orange-300 bg-orange-50 text-orange-700"
                                   : "border-blue-300 bg-blue-50 text-blue-700"
                             }
                           `}
                         >
-                          {device.lastPerformance.temp.toFixed(2)}°C
+                          {(device.lastPerformance?.temperature ?? 0).toFixed(2)}°C
                         </Badge>
                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`
                               h-full transition-all duration-300 rounded-full
                               ${
-                                device.lastPerformance.temp > 80
+                                (device.lastPerformance?.temperature ?? 0) > 80
                                   ? "bg-gradient-to-r from-red-400 to-red-600"
-                                  : device.lastPerformance.temp > 60
+                                  : (device.lastPerformance?.temperature ?? 0) > 60
                                     ? "bg-gradient-to-r from-orange-400 to-orange-600"
                                     : "bg-gradient-to-r from-blue-400 to-blue-600"
                               }
                             `}
-                            style={{ width: `${Math.min(device.lastPerformance.temp, 100)}%` }}
+                            style={{ width: `${Math.min((device.lastPerformance?.temperature ?? 0), 100)}%` }}
                           />
                         </div>
                       </div>

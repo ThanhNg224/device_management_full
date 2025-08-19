@@ -1,5 +1,6 @@
 "use client"
 import { Monitor, FileText } from "lucide-react"
+import Image from "next/image"
 
 import {
   Sidebar,
@@ -38,10 +39,12 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
     <Sidebar>
 <SidebarHeader>
   <div className="flex items-center justify-center px-4 py-4">
-    <img
+    <Image
       src="/logo.png"
       alt="Logo"
-      className="h-17 object-contain"
+      width={68}
+      height={68}
+      className="object-contain"
     />
   </div>
 </SidebarHeader>

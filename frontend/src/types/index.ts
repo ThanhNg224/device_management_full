@@ -1,3 +1,5 @@
+import React from "react"
+
 export interface Device {
   deviceCode: string
   status: "Online" | "Offline" | 0 | 1  // Allow both string and numeric status
@@ -7,7 +9,7 @@ export interface Device {
   lastPerformance: {
     cpu: number
     ram: number
-    temp: number
+    temperature: number
   }
   // Additional fields for modal
   unitCompany: string
@@ -22,6 +24,9 @@ export interface Device {
   language: string
   area: string
   autoReboot: boolean
+  // Additional device settings
+  soundEnabled?: boolean
+  ledEnabled?: boolean
   config: {
     volume: number
     brightness: number
@@ -40,6 +45,6 @@ export interface DeviceLog {
 
 export interface NavItem {
   title: string
-  icon: any
+  icon: React.ComponentType<{ className?: string }>
   id: string
 }

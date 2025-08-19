@@ -1,3 +1,45 @@
+// API Response interfaces
+interface DeviceApiResponse {
+  deviceCode?: string
+  status?: number | string
+  lastConnected?: string
+  location?: string
+  version?: string
+  lastPerformance?: {
+    cpu?: number
+    ram?: number
+    temperature?: number
+    temp?: number // Backward compatibility field
+  }
+  unitCompany?: string
+  deviceName?: string
+  description?: string
+  imei?: string
+  serverAddress?: string
+  macAddress?: string
+  temperatureThreshold?: number
+  faceThreshold?: number
+  distance?: number
+  language?: string
+  area?: string
+  autoReboot?: boolean
+  soundEnabled?: boolean
+  ledEnabled?: boolean
+  config?: {
+    volume?: number
+    brightness?: number
+  }
+}
+
+interface LogApiResponse {
+  serial?: string
+  fullName?: string
+  accessType?: string
+  accessTime?: string
+  errorMessage?: string
+  scoreMatch?: number
+}
+
 /**
  * Helper function to get the API base URL from environment variables
  * In production, this MUST be set via NEXT_PUBLIC_API_URL
@@ -61,14 +103,20 @@ export async function fetchDevices() {
     }
 
     // Transform backend data to match frontend interface
-    const transformedDevices = devices.map((device: any) => ({
+    const transformedDevices = devices.map((device: DeviceApiResponse) => ({
       ...device,
       // Convert numeric status to string
       status: device.status === 1 ? "Online" : "Offline",
-      // Fix CPU usage - multiply by 10 to get correct percentage
+      // Ensure lastPerformance always has valid numbers
       lastPerformance: {
-        ...device.lastPerformance,
-        cpu: Math.round((device.lastPerformance?.cpu || 0) * 100) / 100, // Multiply by 100 and round to 2 decimal places
+        cpu: Number(device.lastPerformance?.cpu) || 0,
+        ram: Number(device.lastPerformance?.ram) || 0,
+        temperature: (() => {
+          // Handle both 'temp' and 'temperature' fields for backward compatibility
+          const tempValue = Number(device.lastPerformance?.temperature || device.lastPerformance?.temp) || 0;
+          // Special case: if temperature is -127 (sensor error), default to 30°C
+          return tempValue === -127 ? 30 : tempValue;
+        })(),
       },
       // Provide default values for missing fields
       unitCompany: device.unitCompany || "N/A",
@@ -95,7 +143,7 @@ export async function fetchDevices() {
   }
 }
 
-export async function uploadApk(file: File, deviceSerial: string): Promise<{ apkUrl: string }> {
+export async function uploadApk(file: File, deviceSerial: string): Promise<{ downloadUrl: string }> {
   try {
     const formData = new FormData()
     formData.append('fileApk', file)
@@ -113,13 +161,13 @@ export async function uploadApk(file: File, deviceSerial: string): Promise<{ apk
     }
 
     const result = await response.json()
-    const apkUrl = result.apkUrl
+    const downloadUrl = result.downloadUrl
     
-    if (!apkUrl) {
-      throw new Error("Invalid response: missing apkUrl")
+    if (!downloadUrl) {
+      throw new Error("Invalid response: missing downloadUrl")
     }
 
-    return { apkUrl }
+    return { downloadUrl }
   } catch (error) {
     console.error("Failed to upload APK:", error)
     throw error
@@ -148,7 +196,7 @@ export async function fetchDeviceLogs() {
     
     // Transform and sort the logs
     const transformedLogs = logs
-      .map((log: any) => ({
+      .map((log: LogApiResponse) => ({
         deviceCode: log.serial || "Unknown", // Use serial field as Device Code
         fullName: log.fullName || "Unknown",
         accessType: log.accessType || "0",

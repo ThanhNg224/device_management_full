@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "check-env": "node scripts/check-env.js",
-    "prebuild": "npm run check-env"
+    "prebuild": "npm run check-env",
+    "clean": "rimraf .next && rimraf node_modules/.cache"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
