@@ -31,14 +31,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.7"
     }
     packaging {
         resources {
@@ -46,6 +41,16 @@ android {
         }
     }
 }
+
+kotlin {
+    // optional but nice to keep toolchains consistent
+    jvmToolchain(17)
+
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -66,5 +71,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("org.nanohttpd:nanohttpd:2.3.1")
+    implementation(libs.nanohttpd)
 }
