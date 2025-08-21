@@ -48,3 +48,14 @@ export interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   id: string
 }
+
+export interface VersionDTO {
+  id: string
+  version_code: string // Semantic version like "1.3.6"
+  version_name?: string | null // Optional descriptive name like "multi faces detection"
+  file_url: string
+  file_size?: number | null
+  sha256?: string | null
+  note?: string | null
+  created_at: string // ISO upload timestamp from BE
+}

@@ -1,3 +1,5 @@
+import type { Device, DeviceLog, VersionDTO } from "../types"
+
 // API Response interfaces
 interface DeviceApiResponse {
   deviceCode?: string
@@ -68,7 +70,7 @@ function buildApiUrl(endpoint: string): string {
   return `${baseUrl}${endpoint}`
 }
 
-export async function fetchDevices() {
+export async function fetchDevices(): Promise<Device[]> {
   try {
     // Using environment variable for API URL with fallback to relative path for Next.js rewrites
     const apiUrl = process.env.NEXT_PUBLIC_API_URL 
@@ -174,7 +176,7 @@ export async function uploadApk(file: File, deviceSerial: string): Promise<{ dow
   }
 }
 
-export async function fetchDeviceLogs() {
+export async function fetchDeviceLogs(): Promise<DeviceLog[]> {
   try {
     // Using environment variable for API URL with fallback
     const response = await fetch(buildApiUrl('/api/deviceLog/getListDeviceLog'), {
@@ -214,5 +216,246 @@ export async function fetchDeviceLogs() {
     // Return mock data as fallback
     const { mockLogs } = await import("../data/logsMock")
     return mockLogs
+  }
+}
+
+// Version Management API Functions
+
+/**
+ * Fetch all versions from the backend
+ */
+export async function fetchVersions(): Promise<VersionDTO[]> {
+  try {
+    const url = buildApiUrl("/versions")
+    console.log("Fetching versions from:", url)
+    
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store"
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch versions: ${response.status}`)
+    }
+
+    const versions: VersionDTO[] = await response.json()
+    console.log("Versions fetched successfully:", versions.length)
+    
+    return versions
+  } catch (error) {
+    console.error("Failed to fetch versions:", error)
+    
+    // Return mock data as fallback
+    const { mockVersions } = await import("../data/versionsMock")
+    console.log("Using mock versions data:", mockVersions.length)
+    return mockVersions
+  }
+}
+
+/**
+ * Create a new version with file upload
+ */
+export async function createVersion({
+  file,
+  versionCode,
+  versionName,
+  note
+}: {
+  file: File
+  versionCode: string
+  versionName?: string
+  note?: string
+}): Promise<VersionDTO> {
+  try {
+    const url = buildApiUrl("/versions")
+    console.log("Creating version at:", url)
+    
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("version_code", versionCode)
+    if (versionName) {
+      formData.append("version_name", versionName)
+    }
+    if (note) {
+      formData.append("note", note)
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || `Failed to create version: ${response.status}`)
+    }
+
+    const version: VersionDTO = await response.json()
+    console.log("Version created successfully:", version)
+    
+    return version
+  } catch (error) {
+    console.error("Failed to create version:", error)
+    
+    // Return mock success for testing
+    console.log("Using mock version creation")
+    const mockVersion: VersionDTO = {
+      id: `version-${Date.now()}`,
+      version_code: versionCode,
+      version_name: versionName || null,
+      file_url: `https://mock.example.com/${file.name}`,
+      file_size: file.size,
+      sha256: `mock-sha256-${Date.now()}`,
+      note: note || null,
+      created_at: new Date().toISOString()
+    }
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    return mockVersion
+  }
+}
+
+/**
+ * Update an existing version (version_name and note only)
+ */
+export async function updateVersion(
+  id: string,
+  data: {
+    version_name?: string
+    note?: string
+  }
+): Promise<VersionDTO> {
+  try {
+    const url = buildApiUrl(`/versions/${id}`)
+    console.log("Updating version at:", url)
+    
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || `Failed to update version: ${response.status}`)
+    }
+
+    const version: VersionDTO = await response.json()
+    console.log("Version updated successfully:", version)
+    
+    return version
+  } catch (error) {
+    console.error("Failed to update version:", error)
+    
+    // Return mock success for testing
+    console.log("Using mock version update")
+    const { mockVersions } = await import("../data/versionsMock")
+    const existingVersion = mockVersions.find(v => v.id === id)
+    
+    if (!existingVersion) {
+      throw new Error("Version not found")
+    }
+    
+    const updatedVersion: VersionDTO = {
+      ...existingVersion,
+      version_name: data.version_name !== undefined ? data.version_name : existingVersion.version_name,
+      note: data.note !== undefined ? data.note : existingVersion.note
+    }
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    return updatedVersion
+  }
+}
+
+/**
+ * Delete a version
+ */
+export async function deleteVersion(id: string): Promise<void> {
+  try {
+    const url = buildApiUrl(`/versions/${id}`)
+    console.log("Deleting version at:", url)
+    
+    const response = await fetch(url, {
+      method: "DELETE",
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || `Failed to delete version: ${response.status}`)
+    }
+
+    console.log("Version deleted successfully")
+  } catch (error) {
+    console.error("Failed to delete version:", error)
+    
+    // Mock success for testing
+    console.log("Using mock version deletion")
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    // Mock successful deletion (no return needed for void function)
+  }
+}
+
+/**
+ * Install version on selected devices
+ */
+export async function installVersionOnDevices(
+  versionId: string,
+  deviceCodes: string[]
+): Promise<{ ok: string[]; failed: string[] }> {
+  try {
+    const url = buildApiUrl(`/versions/${versionId}/install`)
+    console.log("Installing version on devices at:", url)
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ deviceCodes }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || `Failed to install version: ${response.status}`)
+    }
+
+    const result: { ok: string[]; failed: string[] } = await response.json()
+    console.log("Version installation result:", result)
+    
+    return result
+  } catch (error) {
+    console.error("Failed to install version:", error)
+    
+    // Mock installation result for testing
+    console.log("Using mock version installation")
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // Mock result - most succeed, some might fail for testing
+    const totalDevices = deviceCodes.length
+    const failedCount = Math.floor(Math.random() * Math.max(1, totalDevices * 0.2)) // 0-20% failure rate
+    const failedDevices = deviceCodes.slice(0, failedCount)
+    const successDevices = deviceCodes.slice(failedCount)
+    
+    const mockResult = {
+      ok: successDevices,
+      failed: failedDevices
+    }
+    
+    console.log("Mock installation result:", mockResult)
+    return mockResult
   }
 }

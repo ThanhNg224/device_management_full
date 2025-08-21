@@ -1,5 +1,5 @@
 "use client"
-import { Monitor, FileText } from "lucide-react"
+import { Monitor, FileText, Package } from "lucide-react"
 import Image from "next/image"
 
 import {
@@ -31,6 +31,11 @@ const navItems: NavItem[] = [
     title: "Device Logs",
     icon: FileText,
     id: "logs",
+  },
+  {
+    title: "Versions",
+    icon: Package,
+    id: "versions",
   },
 ]
 

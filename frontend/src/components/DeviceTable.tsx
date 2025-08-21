@@ -322,7 +322,7 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-700 transition-colors"
-                          title="Update Version"
+                          title="Install apk"
                           onClick={() => handleUpdateDevice(device)}
                           disabled={isUpdating === device.deviceCode}
                         >
