@@ -58,4 +58,6 @@ export interface VersionDTO {
   sha256?: string | null
   note?: string | null
   created_at: string // ISO upload timestamp from BE
+  status: number // 1 = ready, 0 = missing/error
+  statusTitle?: string | null // Optional status description
 }

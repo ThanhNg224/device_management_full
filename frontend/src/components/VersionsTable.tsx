@@ -116,9 +116,34 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
 
   const formatDate = (dateString: string): string => {
     try {
+      // Handle DD/MM/YYYY HH:mm format from API
+      if (dateString.includes('/') && dateString.includes(' ')) {
+        const [datePart, timePart] = dateString.split(' ')
+        const [day, month, year] = datePart.split('/')
+        // Convert to ISO format that JavaScript can parse
+        const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timePart}:00`
+        return new Date(isoDate).toLocaleString()
+      }
+      // Fallback for other formats
       return new Date(dateString).toLocaleString()
     } catch {
       return dateString
+    }
+  }
+
+  const getStatusDisplay = (status: number, statusTitle?: string | null) => {
+    if (status === 1) {
+      return (
+        <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
+          Ready
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200">
+          {statusTitle || "Error"}
+        </Badge>
+      )
     }
   }
 
@@ -202,6 +227,7 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
                     <TableHead>Version Name</TableHead>
                     <TableHead>Uploaded At</TableHead>
                     <TableHead>File Size</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Note</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -222,6 +248,9 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
                       </TableCell>
                       <TableCell className="text-sm">
                         {formatFileSize(version.file_size)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusDisplay(version.status, version.statusTitle)}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
                         {version.note || (

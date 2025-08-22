@@ -1,6 +1,30 @@
 import type { Device, DeviceLog, VersionDTO } from "../types"
 
 // API Response interfaces
+interface VersionApiResponse {
+  id?: string
+  versionCode?: string
+  version_code?: string
+  versionName?: string | null
+  version_name?: string | null
+  fileUrl?: string
+  file_url?: string
+  fileSize?: number | null
+  file_size?: number | null
+  sha256?: string | null
+  note?: string | null
+  createdAt?: string
+  created_at?: string
+  status?: number
+  statusTitle?: string | null
+  status_title?: string | null
+}
+
+interface VersionsApiResponse {
+  message?: string
+  data?: VersionApiResponse[]
+}
+
 interface DeviceApiResponse {
   deviceCode?: string
   status?: number | string
@@ -226,7 +250,7 @@ export async function fetchDeviceLogs(): Promise<DeviceLog[]> {
  */
 export async function fetchVersions(): Promise<VersionDTO[]> {
   try {
-    const url = buildApiUrl("/versions")
+    const url = buildApiUrl("/api/versions")
     console.log("Fetching versions from:", url)
     
     const response = await fetch(url, {
@@ -241,8 +265,33 @@ export async function fetchVersions(): Promise<VersionDTO[]> {
       throw new Error(`Failed to fetch versions: ${response.status}`)
     }
 
-    const versions: VersionDTO[] = await response.json()
-    console.log("Versions fetched successfully:", versions.length)
+    const apiResponse: VersionsApiResponse = await response.json()
+    console.log("Raw API response:", apiResponse)
+    
+    // Transform API response to our VersionDTO format
+    let versionsData: VersionApiResponse[] = []
+    if (apiResponse.data && Array.isArray(apiResponse.data)) {
+      versionsData = apiResponse.data
+    } else if (Array.isArray(apiResponse)) {
+      versionsData = apiResponse as VersionApiResponse[]
+    } else {
+      throw new Error("Unexpected API response format")
+    }
+
+    const versions: VersionDTO[] = versionsData.map((item: VersionApiResponse) => ({
+      id: item.id || `version-${Date.now()}-${Math.random()}`,
+      version_code: item.versionCode || item.version_code || "0.0.0",
+      version_name: item.versionName || item.version_name || null,
+      file_url: item.fileUrl || item.file_url || "",
+      file_size: item.fileSize || item.file_size || null,
+      sha256: item.sha256 || null,
+      note: item.note || null,
+      created_at: item.createdAt || item.created_at || new Date().toISOString(),
+      status: typeof item.status === 'number' ? item.status : 0,
+      statusTitle: item.statusTitle || item.status_title || null
+    }))
+    
+    console.log("Versions transformed successfully:", versions.length)
     
     return versions
   } catch (error) {
@@ -270,14 +319,14 @@ export async function createVersion({
   note?: string
 }): Promise<VersionDTO> {
   try {
-    const url = buildApiUrl("/versions")
+    const url = buildApiUrl("/api/versions")
     console.log("Creating version at:", url)
     
     const formData = new FormData()
     formData.append("file", file)
-    formData.append("version_code", versionCode)
+    formData.append("versionCode", versionCode)
     if (versionName) {
-      formData.append("version_name", versionName)
+      formData.append("versionName", versionName)
     }
     if (note) {
       formData.append("note", note)
@@ -293,7 +342,28 @@ export async function createVersion({
       throw new Error(errorText || `Failed to create version: ${response.status}`)
     }
 
-    const version: VersionDTO = await response.json()
+    const apiResponse: { data?: VersionApiResponse } & VersionApiResponse = await response.json()
+    console.log("Version creation API response:", apiResponse)
+    
+    // Transform API response to our VersionDTO format
+    let versionData: VersionApiResponse = apiResponse
+    if (apiResponse.data) {
+      versionData = apiResponse.data
+    }
+    
+    const version: VersionDTO = {
+      id: versionData.id || `version-${Date.now()}`,
+      version_code: versionData.versionCode || versionData.version_code || versionCode,
+      version_name: versionData.versionName || versionData.version_name || versionName || null,
+      file_url: versionData.fileUrl || versionData.file_url || "",
+      file_size: versionData.fileSize || versionData.file_size || null,
+      sha256: versionData.sha256 || null,
+      note: versionData.note || null,
+      created_at: versionData.createdAt || versionData.created_at || new Date().toISOString(),
+      status: typeof versionData.status === 'number' ? versionData.status : 1,
+      statusTitle: versionData.statusTitle || versionData.status_title || null
+    }
+    
     console.log("Version created successfully:", version)
     
     return version
@@ -310,7 +380,9 @@ export async function createVersion({
       file_size: file.size,
       sha256: `mock-sha256-${Date.now()}`,
       note: note || null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      status: 1,
+      statusTitle: null
     }
     
     // Simulate network delay
@@ -331,15 +403,21 @@ export async function updateVersion(
   }
 ): Promise<VersionDTO> {
   try {
-    const url = buildApiUrl(`/versions/${id}`)
+    const url = buildApiUrl(`/api/versions/${id}`)
     console.log("Updating version at:", url)
+    
+    // Transform field names to match API expectations
+    const apiData = {
+      ...(data.version_name !== undefined && { versionName: data.version_name }),
+      ...(data.note !== undefined && { note: data.note })
+    }
     
     const response = await fetch(url, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(apiData),
     })
 
     if (!response.ok) {
@@ -347,7 +425,28 @@ export async function updateVersion(
       throw new Error(errorText || `Failed to update version: ${response.status}`)
     }
 
-    const version: VersionDTO = await response.json()
+    const apiResponse: { data?: VersionApiResponse } & VersionApiResponse = await response.json()
+    console.log("Version update API response:", apiResponse)
+    
+    // Transform API response to our VersionDTO format
+    let versionData: VersionApiResponse = apiResponse
+    if (apiResponse.data) {
+      versionData = apiResponse.data
+    }
+    
+    const version: VersionDTO = {
+      id: versionData.id || id,
+      version_code: versionData.versionCode || versionData.version_code || "0.0.0",
+      version_name: versionData.versionName || versionData.version_name || null,
+      file_url: versionData.fileUrl || versionData.file_url || "",
+      file_size: versionData.fileSize || versionData.file_size || null,
+      sha256: versionData.sha256 || null,
+      note: versionData.note || null,
+      created_at: versionData.createdAt || versionData.created_at || new Date().toISOString(),
+      status: typeof versionData.status === 'number' ? versionData.status : 1,
+      statusTitle: versionData.statusTitle || versionData.status_title || null
+    }
+    
     console.log("Version updated successfully:", version)
     
     return version
@@ -381,7 +480,7 @@ export async function updateVersion(
  */
 export async function deleteVersion(id: string): Promise<void> {
   try {
-    const url = buildApiUrl(`/versions/${id}`)
+    const url = buildApiUrl(`/api/versions/${id}`)
     console.log("Deleting version at:", url)
     
     const response = await fetch(url, {
@@ -415,7 +514,7 @@ export async function installVersionOnDevices(
   deviceCodes: string[]
 ): Promise<{ ok: string[]; failed: string[] }> {
   try {
-    const url = buildApiUrl(`/versions/${versionId}/install`)
+    const url = buildApiUrl(`/api/versions/${versionId}/install`)
     console.log("Installing version on devices at:", url)
     
     const response = await fetch(url, {
