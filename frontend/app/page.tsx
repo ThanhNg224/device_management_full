@@ -1,5 +1,6 @@
 "use client"
 import dynamic from 'next/dynamic'
+import { Protected } from "@/src/components/Protected"
 
 const Component = dynamic(() => import("../dashboard"), {
   ssr: false,
@@ -18,5 +19,9 @@ const Component = dynamic(() => import("../dashboard"), {
 })
 
 export default function Page() {
-  return <Component />
+  return (
+    <Protected>
+      <Component />
+    </Protected>
+  )
 }

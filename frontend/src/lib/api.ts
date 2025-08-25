@@ -1,5 +1,95 @@
 import type { Device, DeviceLog, VersionDTO } from "../types"
 
+// Authentication utilities
+export function getAccessToken(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem("accessToken")
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem("refreshToken")
+}
+
+export function clearTokens(): void {
+  if (typeof window === "undefined") return
+  localStorage.removeItem("accessToken")
+  localStorage.removeItem("refreshToken")
+  localStorage.removeItem("user")
+}
+
+export function redirectToLogin(): void {
+  if (typeof window === "undefined") return
+  window.location.href = "/login"
+}
+
+// Enhanced fetch wrapper with authentication
+export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const accessToken = getAccessToken()
+  
+  // Don't set Content-Type for FormData (browser will set it with boundary)
+  const isFormData = options.body instanceof FormData
+  
+  // Add Authorization header if token exists
+  const headers = {
+    ...(!isFormData && { "Content-Type": "application/json" }),
+    ...options.headers,
+    ...(accessToken && { Authorization: `Bearer ${accessToken}` })
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  })
+
+  // Handle 401 responses (unauthorized)
+  if (response.status === 401) {
+    console.log("Received 401, attempting token refresh...")
+    
+    const refreshToken = getRefreshToken()
+    if (refreshToken) {
+      try {
+        // Try to refresh the token
+        const refreshResponse = await fetch(buildApiUrl("/auth/refresh"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ refreshToken })
+        })
+
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json()
+          
+          // Store new access token
+          localStorage.setItem("accessToken", refreshData.accessToken)
+          
+          // Retry the original request with new token
+          const retryHeaders = {
+            ...headers,
+            Authorization: `Bearer ${refreshData.accessToken}`
+          }
+          
+          return fetch(url, {
+            ...options,
+            headers: retryHeaders
+          })
+        }
+      } catch (error) {
+        console.error("Token refresh failed:", error)
+      }
+    }
+    
+    // If refresh failed or no refresh token, clear tokens and redirect
+    console.log("Token refresh failed, redirecting to login")
+    clearTokens()
+    redirectToLogin()
+    throw new Error("Authentication required")
+  }
+
+  return response
+}
+
 // API Response interfaces
 interface VersionApiResponse {
   id?: string
@@ -101,11 +191,8 @@ export async function fetchDevices(): Promise<Device[]> {
       ? buildApiUrl('/api/device/listDevice')
       : "/api/device/listDevice"
     
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(apiUrl, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
       signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
@@ -203,11 +290,8 @@ export async function uploadApk(file: File, deviceSerial: string): Promise<{ dow
 export async function fetchDeviceLogs(): Promise<DeviceLog[]> {
   try {
     // Using environment variable for API URL with fallback
-    const response = await fetch(buildApiUrl('/api/deviceLog/getListDeviceLog'), {
+    const response = await apiFetch(buildApiUrl('/api/deviceLog/getListDeviceLog'), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
       signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
@@ -253,11 +337,8 @@ export async function fetchVersions(): Promise<VersionDTO[]> {
     const url = buildApiUrl("/api/versions")
     console.log("Fetching versions from:", url)
     
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
       cache: "no-store"
     })
 
@@ -332,7 +413,7 @@ export async function createVersion({
       formData.append("note", note)
     }
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: "POST",
       body: formData,
     })
@@ -412,11 +493,8 @@ export async function updateVersion(
       ...(data.note !== undefined && { note: data.note })
     }
     
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(apiData),
     })
 
@@ -483,7 +561,7 @@ export async function deleteVersion(id: string): Promise<void> {
     const url = buildApiUrl(`/api/versions/${id}`)
     console.log("Deleting version at:", url)
     
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: "DELETE",
     })
 
@@ -517,11 +595,8 @@ export async function installVersionOnDevices(
     const url = buildApiUrl(`/api/versions/${versionId}/install`)
     console.log("Installing version on devices at:", url)
     
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({ deviceCodes }),
     })
 
@@ -576,5 +651,28 @@ export async function installVersionOnDevices(
     
     console.log("Mock installation result:", mockResult)
     return mockResult
+  }
+}
+
+// Authentication API functions
+export async function logout(): Promise<void> {
+  try {
+    const refreshToken = getRefreshToken()
+    
+    if (refreshToken) {
+      // Try to notify backend about logout
+      const url = buildApiUrl("/auth/logout")
+      await apiFetch(url, {
+        method: "POST",
+        body: JSON.stringify({ refreshToken }),
+      })
+    }
+  } catch (error) {
+    // Logout errors are not critical, just log them
+    console.warn("Logout API call failed:", error)
+  } finally {
+    // Always clear tokens regardless of API call success
+    clearTokens()
+    redirectToLogin()
   }
 }

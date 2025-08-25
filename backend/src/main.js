@@ -27,7 +27,6 @@ mongoose.connect('mongodb://localhost:27017/myapp', {
   await Device.updateMany({}, { $set: { status: 0 } });
 })
 .catch((err) => console.error('❌ Lỗi kết nối MongoDB:', err));
-require('./utils/clearUploads');
 
 websocketController(server);
 route(app);

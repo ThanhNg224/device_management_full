@@ -1,6 +1,7 @@
 "use client"
-import { Monitor, FileText, Package } from "lucide-react"
+import { Monitor, FileText, Package, LogOut } from "lucide-react"
 import Image from "next/image"
+import { logout } from "../lib/api"
 
 import {
   Sidebar,
@@ -40,13 +41,17 @@ const navItems: NavItem[] = [
 ]
 
 export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
+  const handleLogout = () => {
+    logout()
+  }
+
   return (
-    <Sidebar>
-<SidebarHeader>
-  <div className="flex items-center justify-center px-4 py-4">
+    <Sidebar variant="inset" collapsible="icon">
+      <SidebarHeader>
+  <div className="flex h-16 items-center justify-center p-4">
     <Image
       src="/logo.png"
-      alt="Logo"
+      alt="Device Manager Logo"
       width={68}
       height={68}
       className="object-contain"
@@ -69,6 +74,22 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        {/* Logout Section */}
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild onClick={handleLogout}>
+                  <button className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

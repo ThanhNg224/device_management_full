@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const VersionApkController = require('../controller/versionApkController');
+const Tes = require('../controller/uploadController');
 const multer = require('multer');
 const path = require('path');
 
@@ -16,6 +17,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 router.post('/versions', upload.single('file'), VersionApkController.postVersion);
 router.get('/versions', VersionApkController.getVersion);
-router.delete('/clearVersionError', VersionApkController.clearVersionError)
+router.put('/versions/:id', VersionApkController.updateVersion);
+router.delete('/versions/:id', VersionApkController.removeVersion);
+router.delete('/versions/clear', VersionApkController.clearVersionError);
+router.post('/versions/:id/install', VersionApkController.installVersion);
+router.post('/upload-apk', upload.single('fileApk'), Tes.uploadFile);
 
 module.exports = router;
