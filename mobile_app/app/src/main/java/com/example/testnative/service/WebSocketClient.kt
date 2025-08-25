@@ -57,7 +57,7 @@ class WebSocketClient(
         lastVersion = version
         lastLocation = location
 
-        val serverUrl = "ws://$serverIp:3000"
+        val serverUrl = "ws://$serverIp:4000"
         val request = Request.Builder().url(serverUrl).build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {

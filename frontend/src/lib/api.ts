@@ -530,10 +530,30 @@ export async function installVersionOnDevices(
       throw new Error(errorText || `Failed to install version: ${response.status}`)
     }
 
-    const result: { ok: string[]; failed: string[] } = await response.json()
-    console.log("Version installation result:", result)
+    const apiResponse = await response.json()
+    console.log("Version installation API response:", apiResponse)
     
-    return result
+    // Transform backend response to expected format
+    // Backend returns: { success: true, versionId: string, sentDevices: string[] }
+    // Frontend expects: { ok: string[], failed: string[] }
+    if (apiResponse.success && apiResponse.sentDevices) {
+      const sentDevices = apiResponse.sentDevices || []
+      const failedDevices = deviceCodes.filter(device => !sentDevices.includes(device))
+      
+      const result = {
+        ok: sentDevices,
+        failed: failedDevices
+      }
+      
+      console.log("Transformed installation result:", result)
+      return result
+    } else {
+      // If response doesn't match expected format, treat all as failed
+      return {
+        ok: [],
+        failed: deviceCodes
+      }
+    }
   } catch (error) {
     console.error("Failed to install version:", error)
     
