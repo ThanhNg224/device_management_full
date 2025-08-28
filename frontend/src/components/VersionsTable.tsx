@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Upload, Edit2, Trash2, Download } from "lucide-react"
-import { fetchVersions, deleteVersion } from "../lib/api"
+import { fetchVersions, deleteVersion, clearVersions } from "../lib/api"
 import { VersionFormModal } from "./VersionFormModal"
 import { InstallVersionModal } from "./InstallVersionModal"
 import { useToast } from "./Toast"
@@ -22,6 +22,7 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [deleteLoading, setDeleteLoading] = React.useState<string | null>(null)
+  const [clearLoading, setClearLoading] = React.useState(false)
   
   // Modal states
   const [showAddModal, setShowAddModal] = React.useState(false)
@@ -89,6 +90,21 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
       showToast(errorMessage, "error")
     } finally {
       setDeleteLoading(null)
+    }
+  }
+
+  const handleClearCorrupted = async () => {
+    try {
+      setClearLoading(true)
+      await clearVersions()
+      showToast("Corrupted versions cleared successfully", "success")
+      await loadVersions()
+    } catch (err) {
+      console.error("Failed to clear corrupted versions:", err)
+      const errorMessage = err instanceof Error ? err.message : "Failed to clear corrupted versions"
+      showToast(errorMessage, "error")
+    } finally {
+      setClearLoading(false)
     }
   }
 
@@ -203,10 +219,20 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
               <CardTitle>Versions</CardTitle>
               <CardDescription>Manage APK versions for device installation</CardDescription>
             </div>
-            <Button onClick={() => setShowAddModal(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Add Version
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleClearCorrupted} 
+                variant="destructive"
+                disabled={clearLoading}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {clearLoading ? "Clearing..." : "Clear Corrupted Versions"}
+              </Button>
+              <Button onClick={() => setShowAddModal(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Add Version
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -301,6 +327,7 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
       {showAddModal && (
         <VersionFormModal
           mode="add"
+          existingVersions={versions}
           onClose={() => setShowAddModal(false)}
           onSuccess={handleVersionCreated}
         />
@@ -310,6 +337,7 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
         <VersionFormModal
           mode="edit"
           version={editingVersion}
+          existingVersions={versions}
           onClose={() => setEditingVersion(null)}
           onSuccess={handleVersionUpdated}
         />
