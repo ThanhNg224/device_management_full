@@ -18,8 +18,8 @@ const upload = multer({ storage: storage });
 router.post('/versions', upload.single('file'), VersionApkController.postVersion);
 router.get('/versions', VersionApkController.getVersion);
 router.put('/versions/:id', VersionApkController.updateVersion);
-router.delete('/versions/:id', VersionApkController.removeVersion);
 router.delete('/versions/clear', VersionApkController.clearVersionError);
+router.delete('/versions/:id', VersionApkController.removeVersion);
 router.post('/versions/:id/install', VersionApkController.installVersion);
 router.post('/upload-apk', upload.single('fileApk'), Tes.uploadFile);
 

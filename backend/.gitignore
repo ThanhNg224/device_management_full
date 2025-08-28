@@ -15,10 +15,8 @@ pids
 *.seed
 *.pid.lock
 
-# dotenv environment variables
-.env
-.env.local
-.env.*.local
+# Ignore all APK files
+*.apk
 
 # Optional npm cache directory
 .npm/
