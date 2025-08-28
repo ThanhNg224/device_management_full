@@ -15,7 +15,7 @@ This application uses environment variables to configure API endpoints. Follow t
 
 2. Update the `.env.local` file with your backend server URL:
    ```env
-   NEXT_PUBLIC_API_URL=http://192.168.1.157:3000
+   NEXT_PUBLIC_API_URL=
    ```
 
 ### Production Setup
@@ -75,6 +75,20 @@ This application uses environment variables to configure API endpoints. Follow t
 ## Development
 
 The application includes mock data fallbacks for development when the backend is unavailable.
+
+### Authentication Bypass (Development)
+
+For development when the backend auth API isn't ready:
+
+```bash
+# Add to .env.local to skip authentication
+NEXT_PUBLIC_AUTH_BYPASS=1
+```
+
+- **Turn ON**: Set `NEXT_PUBLIC_AUTH_BYPASS=1` in `.env.local`
+- **Turn OFF**: Set `NEXT_PUBLIC_AUTH_BYPASS=0` or remove the line
+- **No code changes required** - just environment variable toggle
+- See `docs/dev-auth-bypass.md` for full details
 
 ## Production Deployment
 

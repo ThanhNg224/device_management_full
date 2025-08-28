@@ -45,19 +45,29 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
     logout()
   }
 
+  const handleLogoClick = () => {
+    setActiveTab("devices") // Set to default tab (devices)
+  }
+
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
-  <div className="flex h-16 items-center justify-center p-4">
-    <Image
-      src="/logo.png"
-      alt="Device Manager Logo"
-      width={68}
-      height={68}
-      className="object-contain"
-    />
-  </div>
-</SidebarHeader>
+        <div className="flex h-20 items-center justify-center p-0">
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center justify-center p-0 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full h-full"
+            title="Go to Home"
+          >
+            <Image
+              src="/logo.png"
+              alt="Device Manager Logo"
+              width={120}
+              height={120}
+              className="object-cover hover:scale-105 transition-transform duration-200 w-3/4 h-3/4 rounded-md"
+            />
+          </button>
+        </div>
+      </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>

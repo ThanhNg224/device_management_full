@@ -14,11 +14,12 @@ import type { VersionDTO } from "../types"
 interface VersionFormModalProps {
   mode: "add" | "edit"
   version?: VersionDTO
+  existingVersions?: VersionDTO[] // Add this to check for duplicates client-side
   onClose: () => void
   onSuccess: () => void
 }
 
-export function VersionFormModal({ mode, version, onClose, onSuccess }: VersionFormModalProps) {
+export function VersionFormModal({ mode, version, existingVersions = [], onClose, onSuccess }: VersionFormModalProps) {
   const [loading, setLoading] = React.useState(false)
   const [file, setFile] = React.useState<File | null>(null)
   const [versionCode, setVersionCode] = React.useState(
@@ -30,6 +31,7 @@ export function VersionFormModal({ mode, version, onClose, onSuccess }: VersionF
   const [note, setNote] = React.useState(
     mode === "edit" ? version?.note || "" : ""
   )
+  const [versionCodeError, setVersionCodeError] = React.useState<string | null>(null)
 
   const { showToast } = useToast()
 
@@ -52,6 +54,9 @@ export function VersionFormModal({ mode, version, onClose, onSuccess }: VersionF
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Clear previous version code error
+    setVersionCodeError(null)
+    
     if (mode === "add") {
       // Validation for add mode
       if (!file) {
@@ -70,45 +75,68 @@ export function VersionFormModal({ mode, version, onClose, onSuccess }: VersionF
         showToast("Version code must be in format x.y.z (e.g., 1.3.6)", "error")
         return
       }
+
+      // Client-side duplicate version check (faster feedback, reduces API calls)
+      const duplicateVersion = existingVersions.find(
+        v => v.version_code === versionCode.trim()
+      )
+      if (duplicateVersion) {
+        setVersionCodeError("Version code đã tồn tại. Vui lòng sử dụng version code khác.")
+        showToast("Version code đã tồn tại. Vui lòng sử dụng version code khác.", "error")
+        return
+      }
     }
 
     try {
       setLoading(true)
 
       if (mode === "add") {
-        await createVersion({
+        // Create version and wait for completion
+        const result = await createVersion({
           file: file!,
           versionCode: versionCode.trim(),
           versionName: versionName.trim() || undefined,
           note: note.trim() || undefined,
         })
-        showToast("Version created successfully", "success")
+        
+        // Only show success message if creation was successful
+        console.log("Version creation successful:", result)
+        showToast("Tạo phiên bản thành công", "success")
+        onSuccess()
+        onClose()
       } else {
         if (!version?.id) {
           throw new Error("Version ID is required for editing")
         }
         
-        await updateVersion(version.id, {
+        const result = await updateVersion(version.id, {
           version_name: versionName.trim() || undefined,
           note: note.trim() || undefined,
         })
+        
+        console.log("Version update successful:", result)
         showToast("Version updated successfully", "success")
+        onSuccess()
+        onClose()
       }
-
-      onSuccess()
     } catch (err) {
       console.error(`Failed to ${mode} version:`, err)
-      let errorMessage = `Failed to ${mode} version`
       
-      if (err instanceof Error) {
-        if (err.message.includes("already exists") || err.message.includes("duplicate")) {
-          errorMessage = "Version code already exists"
-        } else {
-          errorMessage = err.message
-        }
+      // Ensure loading is stopped immediately on error
+      setLoading(false)
+      
+      const errorMessage = err instanceof Error ? err.message : "Tạo phiên bản thất bại"
+      
+      // Check for duplicate version error (backup server-side validation)
+      if (errorMessage.includes("versionCode") && errorMessage.includes("tồn tại")) {
+        setVersionCodeError("Version code đã tồn tại. Vui lòng sử dụng version code khác.")
+        showToast("Version code đã tồn tại. Vui lòng sử dụng version code khác.", "error")
+      } else {
+        showToast(errorMessage, "error")
       }
       
-      showToast(errorMessage, "error")
+      // Do not call onSuccess() or onClose() on error - keep modal open
+      return // Explicitly return to avoid any further execution
     } finally {
       setLoading(false)
     }
@@ -159,10 +187,32 @@ export function VersionFormModal({ mode, version, onClose, onSuccess }: VersionF
                   id="versionCode"
                   type="text"
                   value={versionCode}
-                  onChange={(e) => setVersionCode(e.target.value)}
+                  onChange={(e) => {
+                    const newValue = e.target.value
+                    setVersionCode(newValue)
+                    
+                    // Clear previous error when user starts typing
+                    if (versionCodeError) {
+                      setVersionCodeError(null)
+                    }
+                    
+                    // Real-time duplicate check (only in add mode and when value is not empty)
+                    if (mode === "add" && newValue.trim()) {
+                      const duplicateVersion = existingVersions.find(
+                        v => v.version_code === newValue.trim()
+                      )
+                      if (duplicateVersion) {
+                        setVersionCodeError("Version code đã tồn tại")
+                      }
+                    }
+                  }}
                   placeholder="e.g., 1.3.6"
                   required
+                  className={versionCodeError ? "border-red-500" : ""}
                 />
+                {versionCodeError && (
+                  <p className="text-xs text-red-600">{versionCodeError}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Semantic version format (x.y.z) - e.g., 1.3.6, 2.1.0
                 </p>

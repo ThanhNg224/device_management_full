@@ -15,6 +15,17 @@ export function Protected({ children }: ProtectedProps) {
   React.useEffect(() => {
     const checkAuth = () => {
       try {
+        // Check for development bypass flag
+        const authBypass = process.env.NEXT_PUBLIC_AUTH_BYPASS === "1"
+        
+        if (authBypass) {
+          console.log("🚧 Auth bypass enabled - skipping authentication checks")
+          setIsAuthenticated(true)
+          setIsChecking(false)
+          return
+        }
+
+        // Normal authentication flow
         const accessToken = localStorage.getItem("accessToken")
         
         if (!accessToken) {
@@ -63,6 +74,6 @@ export function Protected({ children }: ProtectedProps) {
     return null
   }
 
-  // User is authenticated, render the protected content
+  // User is authenticated or bypass is enabled, render the protected content
   return <>{children}</>
 }

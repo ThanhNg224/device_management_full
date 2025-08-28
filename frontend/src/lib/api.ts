@@ -20,6 +20,14 @@ export function clearTokens(): void {
 
 export function redirectToLogin(): void {
   if (typeof window === "undefined") return
+  
+  // Check for development bypass flag
+  const authBypass = process.env.NEXT_PUBLIC_AUTH_BYPASS === "1"
+  if (authBypass) {
+    console.log("🚧 Auth bypass enabled - skipping login redirect")
+    return
+  }
+  
   window.location.href = "/login"
 }
 
@@ -418,18 +426,23 @@ export async function createVersion({
       body: formData,
     })
 
+    // Always parse JSON response first
+    const data = await response.json()
+    console.log("Version creation API response:", data)
+
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(errorText || `Failed to create version: ${response.status}`)
+      // Check for specific duplicate version error
+      if (data?.message && data.message.includes("versionCode") && data.message.includes("tồn tại")) {
+        throw new Error(data.message)
+      }
+      // General error handling
+      throw new Error(data?.message || `HTTP ${response.status}`)
     }
 
-    const apiResponse: { data?: VersionApiResponse } & VersionApiResponse = await response.json()
-    console.log("Version creation API response:", apiResponse)
-    
     // Transform API response to our VersionDTO format
-    let versionData: VersionApiResponse = apiResponse
-    if (apiResponse.data) {
-      versionData = apiResponse.data
+    let versionData: VersionApiResponse = data
+    if (data.data) {
+      versionData = data.data
     }
     
     const version: VersionDTO = {
@@ -451,8 +464,20 @@ export async function createVersion({
   } catch (error) {
     console.error("Failed to create version:", error)
     
-    // Return mock success for testing
-    console.log("Using mock version creation")
+    // For specific API errors (like duplicate version), re-throw the error
+    if (error instanceof Error) {
+      // Check if this is a duplicate version error or other API error that should be shown to user
+      if (error.message.includes("versionCode") && error.message.includes("tồn tại")) {
+        throw error // Re-throw duplicate version error
+      }
+      if (error.message.includes("HTTP")) {
+        throw error // Re-throw HTTP errors
+      }
+    }
+    
+    // For network/connection errors in development, return mock data
+    // This only applies to actual network failures, not API validation errors
+    console.log("Using mock version creation for network error")
     const mockVersion: VersionDTO = {
       id: `version-${Date.now()}`,
       version_code: versionCode,
@@ -674,5 +699,30 @@ export async function logout(): Promise<void> {
     // Always clear tokens regardless of API call success
     clearTokens()
     redirectToLogin()
+  }
+}
+
+/**
+ * Clear corrupted versions from the system
+ */
+export async function clearVersions(): Promise<void> {
+  try {
+    const url = buildApiUrl("/api/versions/clear")
+    console.log("Clearing corrupted versions at:", url)
+    
+    const response = await apiFetch(url, {
+      method: "DELETE",
+      body: JSON.stringify({ deletedIds: [] }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || `Failed to clear versions: ${response.status}`)
+    }
+
+    console.log("Corrupted versions cleared successfully")
+  } catch (error) {
+    console.error("Failed to clear corrupted versions:", error)
+    throw error
   }
 }
