@@ -49,3 +49,6 @@
 
 # MacOS junk
 .DS_Store
+
+/docs/
+
