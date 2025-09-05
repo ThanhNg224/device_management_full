@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Upload, Edit2, Trash2, Download } from "lucide-react"
+import { Upload, Edit2, Trash2, Download, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import { fetchVersions, deleteVersion, clearVersions } from "../lib/api"
 import { VersionFormModal } from "./VersionFormModal"
 import { InstallVersionModal } from "./InstallVersionModal"
@@ -23,6 +23,8 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
   const [error, setError] = React.useState<string | null>(null)
   const [deleteLoading, setDeleteLoading] = React.useState<string | null>(null)
   const [clearLoading, setClearLoading] = React.useState(false)
+  const [sortColumn, setSortColumn] = React.useState<string | null>(null)
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc')
   
   // Modal states
   const [showAddModal, setShowAddModal] = React.useState(false)
@@ -49,22 +51,88 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
     return 0
   }
 
-  const loadVersions = React.useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await fetchVersions()
-      
-      // Sort by version_code desc (semantic version), then by created_at desc for ties
-      const sortedVersions = data.sort((a, b) => {
-        const versionComparison = compareVersions(b.version_code, a.version_code) // Descending
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const getSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ChevronsUpDown size={12} className="opacity-40" />
+    }
+    return sortDirection === 'asc'
+      ? <ChevronUp size={12} className="text-foreground" />
+      : <ChevronDown size={12} className="text-foreground" />
+  }
+
+  // Apply sorting to versions
+  const sortedVersions = React.useMemo(() => {
+    if (!sortColumn) {
+      // Default sort by version_code desc (semantic version), then by created_at desc for ties
+      return [...versions].sort((a, b) => {
+        const versionComparison = compareVersions(b.version_code, a.version_code)
         if (versionComparison !== 0) {
           return versionComparison
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       })
-      
-      setVersions(sortedVersions)
+    }
+
+    return [...versions].sort((a, b) => {
+      let aValue: string | number | Date
+      let bValue: string | number | Date
+
+      switch (sortColumn) {
+        case 'version_code':
+          return sortDirection === 'asc' 
+            ? compareVersions(a.version_code, b.version_code)
+            : compareVersions(b.version_code, a.version_code)
+        case 'version_name':
+          aValue = (a.version_name || '').toLowerCase()
+          bValue = (b.version_name || '').toLowerCase()
+          break
+        case 'created_at':
+          aValue = new Date(a.created_at)
+          bValue = new Date(b.created_at)
+          break
+        case 'file_size':
+          aValue = a.file_size || 0
+          bValue = b.file_size || 0
+          break
+        case 'status':
+          aValue = a.status
+          bValue = b.status
+          break
+        default:
+          return 0
+      }
+
+      if (aValue instanceof Date && bValue instanceof Date) {
+        if (sortDirection === 'asc') {
+          return aValue.getTime() - bValue.getTime()
+        } else {
+          return bValue.getTime() - aValue.getTime()
+        }
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
+  }, [versions, sortColumn, sortDirection])
+
+  const loadVersions = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await fetchVersions()
+      setVersions(data)
     } catch (err) {
       console.error("Failed to load versions:", err)
       setError(err instanceof Error ? err.message : "Failed to load versions")
@@ -249,17 +317,52 @@ export function VersionsTable({ onlineDevices }: VersionsTableProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Version Code</TableHead>
-                    <TableHead>Version Name</TableHead>
-                    <TableHead>Uploaded At</TableHead>
-                    <TableHead>File Size</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/20 transition-colors"
+                      onClick={() => handleSort('version_code')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Version Code{getSortIcon('version_code')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/20 transition-colors"
+                      onClick={() => handleSort('version_name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Version Name{getSortIcon('version_name')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/20 transition-colors"
+                      onClick={() => handleSort('created_at')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Uploaded At{getSortIcon('created_at')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/20 transition-colors"
+                      onClick={() => handleSort('file_size')}
+                    >
+                      <div className="flex items-center gap-1">
+                        File Size{getSortIcon('file_size')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/20 transition-colors"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Status{getSortIcon('status')}
+                      </div>
+                    </TableHead>
                     <TableHead>Note</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {versions.map((version) => (
+                  {sortedVersions.map((version) => (
                     <TableRow key={version.id}>
                       <TableCell>
                         <Badge variant="secondary">{version.version_code}</Badge>
