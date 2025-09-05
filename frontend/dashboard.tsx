@@ -8,6 +8,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "./src/components/AppSidebar"
 import { DeviceTable } from "./src/components/DeviceTable"
 import { DeviceLogsTable } from "./src/components/DeviceLogsTable"
+import { VersionsTable } from "./src/components/VersionsTable"
 import { ToastProvider } from "./src/components/Toast"
 import { fetchDevices } from "./src/lib/api"
 import { mockLogs } from "./src/data/logsMock"
@@ -123,6 +124,7 @@ function DashboardContent() {
             <>
               {activeTab === "devices" && <DeviceTable devices={devices} onUpdateDevice={updateDevice} />}
               {activeTab === "logs" && <DeviceLogsTable />}
+              {activeTab === "versions" && <VersionsTable onlineDevices={devices.filter(d => d.status === "Online" || d.status === 1)} />}
             </>
           )}
         </main>

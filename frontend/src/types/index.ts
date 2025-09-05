@@ -6,6 +6,7 @@ export interface Device {
   lastConnected: string
   location: string
   version: string
+  ipAddress: string  // New field from backend
   lastPerformance: {
     cpu: number
     ram: number
@@ -47,4 +48,17 @@ export interface NavItem {
   title: string
   icon: React.ComponentType<{ className?: string }>
   id: string
+}
+
+export interface VersionDTO {
+  id: string
+  version_code: string // Semantic version like "1.3.6"
+  version_name?: string | null // Optional descriptive name like "multi faces detection"
+  file_url: string
+  file_size?: number | null
+  sha256?: string | null
+  note?: string | null
+  created_at: string // ISO upload timestamp from BE
+  status: number // 1 = ready, 0 = missing/error
+  statusTitle?: string | null // Optional status description
 }

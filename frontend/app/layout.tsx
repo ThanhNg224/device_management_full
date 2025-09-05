@@ -13,8 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SunWorld Device Manager",
-  description: "Device management and monitoring system",
+  title: "Device Manager",
+  description: "Comprehensive device management and monitoring system",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

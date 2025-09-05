@@ -1,6 +1,7 @@
 "use client"
-import { Monitor, FileText } from "lucide-react"
+import { Monitor, FileText, Package, LogOut } from "lucide-react"
 import Image from "next/image"
+import { logout } from "../lib/api"
 
 import {
   Sidebar,
@@ -32,22 +33,41 @@ const navItems: NavItem[] = [
     icon: FileText,
     id: "logs",
   },
+  {
+    title: "Versions",
+    icon: Package,
+    id: "versions",
+  },
 ]
 
 export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
+  const handleLogout = () => {
+    logout()
+  }
+
+  const handleLogoClick = () => {
+    setActiveTab("devices") // Set to default tab (devices)
+  }
+
   return (
-    <Sidebar>
-<SidebarHeader>
-  <div className="flex items-center justify-center px-4 py-4">
-    <Image
-      src="/logo.png"
-      alt="Logo"
-      width={68}
-      height={68}
-      className="object-contain"
-    />
-  </div>
-</SidebarHeader>
+    <Sidebar variant="inset" collapsible="icon">
+      <SidebarHeader>
+        <div className="flex h-20 items-center justify-center p-0">
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center justify-center p-0 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full h-full"
+            title="Go to Home"
+          >
+            <Image
+              src="/logo.png"
+              alt="Device Manager Logo"
+              width={120}
+              height={120}
+              className="object-cover hover:scale-105 transition-transform duration-200 w-3/4 h-3/4 rounded-md"
+            />
+          </button>
+        </div>
+      </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
@@ -64,6 +84,22 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        {/* Logout Section */}
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild onClick={handleLogout}>
+                  <button className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

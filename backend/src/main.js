@@ -6,11 +6,11 @@ const http = require('http');
 const { websocketController } = require('./controller/socketController');
 const cors = require('cors');
 const path = require('path');
-const bodyParser = require('body-parser');
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
-const PORT = 3000;
+const PORT = 4000;
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -28,7 +28,6 @@ mongoose.connect('mongodb://localhost:27017/myapp', {
   await Device.updateMany({}, { $set: { status: 0 } });
 })
 .catch((err) => console.error('❌ Lỗi kết nối MongoDB:', err));
-require('./utils/clearUploads');
 
 websocketController(server);
 route(app);

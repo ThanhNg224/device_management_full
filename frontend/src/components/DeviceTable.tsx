@@ -1,5 +1,5 @@
 "use client"
-import { Plus, Eye, Circle, Settings, Download, Copy } from "lucide-react"
+import { Eye, Circle, Settings, Download, Copy, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -23,11 +23,84 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [isUpdating, setIsUpdating] = React.useState<string | null>(null) // Track which device is updating
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [sortColumn, setSortColumn] = React.useState<string | null>(null)
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc')
   const { showToast } = useToast()
+
+  // Pagination logic
+  const itemsPerPage = 10
+  
+  // Sorting logic
+  const sortedDevices = React.useMemo(() => {
+    if (!sortColumn) return devices
+    
+    return [...devices].sort((a, b) => {
+      let aValue: string | number
+      let bValue: string | number
+      
+      switch (sortColumn) {
+        case 'deviceCode':
+          aValue = a.deviceCode
+          bValue = b.deviceCode
+          break
+        case 'status':
+          aValue = a.status
+          bValue = b.status
+          break
+        case 'location':
+          aValue = a.location
+          bValue = b.location
+          break
+        case 'version':
+          aValue = a.version
+          bValue = b.version
+          break
+        default:
+          return 0
+      }
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase()
+        bValue = bValue.toLowerCase()
+      }
+      
+      if (sortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
+  }, [devices, sortColumn, sortDirection])
+  
+  const totalPages = Math.ceil(sortedDevices.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentDevices = sortedDevices.slice(startIndex, endIndex)
 
   const handleViewDetails = (device: Device) => {
     setSelectedDevice(device)
     setIsModalOpen(true)
+  }
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+    setCurrentPage(1) // Reset to first page when sorting
+  }
+
+  const getSortIcon = (column: string) => {
+    // Always show a sort icon: ChevronsUpDown when unsorted, arrow when sorted
+    if (sortColumn !== column) {
+      return <ChevronsUpDown size={12} className="opacity-40" />
+    }
+    return sortDirection === 'asc'
+      ? <ChevronUp size={12} className="text-foreground" />
+      : <ChevronDown size={12} className="text-foreground" />
   }
 
   const handleCloseModal = () => {
@@ -121,10 +194,6 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
           <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
           <p className="text-muted-foreground">Manage and monitor your device fleet</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Device
-        </Button>
       </div>
 
       <Card>
@@ -132,30 +201,58 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
           <CardTitle>Device Overview</CardTitle>
           <CardDescription>Current status and performance metrics for all registered devices</CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
+  <CardContent className="p-0 overflow-x-hidden">
+          <div>
+            <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-muted/50 to-muted/30 hover:bg-muted/40">
-                  <TableHead className="font-bold text-foreground py-4">Device Code</TableHead>
-                  <TableHead className="font-bold text-foreground">Status</TableHead>
-                  <TableHead className="font-bold text-foreground">Last Connected</TableHead>
-                  <TableHead className="font-bold text-foreground">Location</TableHead>
-                  <TableHead className="font-bold text-foreground">Version</TableHead>
-                  <TableHead className="font-bold text-foreground">CPU</TableHead>
-                  <TableHead className="font-bold text-foreground">RAM</TableHead>
-                  <TableHead className="font-bold text-foreground">Temperature</TableHead>
+                  <TableHead
+                    className="font-bold text-foreground py-4 cursor-pointer hover:bg-muted/20 transition-colors"
+                    onClick={() => handleSort('deviceCode')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Device Code{getSortIcon('deviceCode')}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="font-bold text-foreground cursor-pointer hover:bg-muted/20 transition-colors"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Status{getSortIcon('status')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground hidden md:table-cell">Last Connected</TableHead>
+                  <TableHead
+                    className="font-bold text-foreground hidden lg:table-cell cursor-pointer hover:bg-muted/20 transition-colors"
+                    onClick={() => handleSort('location')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Location{getSortIcon('location')}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="font-bold text-foreground hidden sm:table-cell cursor-pointer hover:bg-muted/20 transition-colors"
+                    onClick={() => handleSort('version')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Version{getSortIcon('version')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground hidden xl:table-cell">CPU</TableHead>
+                  <TableHead className="font-bold text-foreground hidden xl:table-cell">RAM</TableHead>
+                  <TableHead className="font-bold text-foreground hidden xl:table-cell">Temperature</TableHead>
                   <TableHead className="font-bold text-foreground text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {devices.map((device, index) => (
+                {currentDevices.map((device, index) => (
                   <TableRow
-                    key={device.deviceCode}
-                    className={`
-                      transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:scale-[1.01]
-                      ${index % 2 === 0 ? "bg-background" : "bg-muted/20"}
-                    `}
+                      key={device.deviceCode}
+                      className={
+                        `transition-all duration-200 hover:bg-muted/50 hover:shadow-sm ` +
+                        (index % 2 === 0 ? "bg-background" : "bg-muted/20")
+                      }
                   >
                     <TableCell className="font-semibold py-3">
                       <div className="flex items-center gap-2">
@@ -189,14 +286,14 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                         {device.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground font-mono">{device.lastConnected}</TableCell>
-                    <TableCell className="text-sm">{device.location}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm text-muted-foreground font-mono hidden md:table-cell">{device.lastConnected}</TableCell>
+                    <TableCell className="text-sm hidden lg:table-cell">{device.location}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant="outline" className="font-mono text-xs">
                         {device.version}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
@@ -230,7 +327,7 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
@@ -264,7 +361,7 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
@@ -322,7 +419,7 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-700 transition-colors"
-                          title="Update Version"
+                          title="Install apk"
                           onClick={() => handleUpdateDevice(device)}
                           disabled={isUpdating === device.deviceCode}
                         >
@@ -339,6 +436,62 @@ export function DeviceTable({ devices, onUpdateDevice }: DeviceTableProps) {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {sortedDevices.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+              <div className="text-sm text-muted-foreground">
+                Showing {startIndex + 1}-{Math.min(endIndex, sortedDevices.length)} of {sortedDevices.length} devices
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const page = i + 1
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    )
+                  })}
+                  {totalPages > 5 && (
+                    <>
+                      <span className="px-2 text-muted-foreground">...</span>
+                      <Button
+                        variant={currentPage === totalPages ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(totalPages)}
+                      >
+                        {totalPages}
+                      </Button>
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       <DeviceDetailsModal
