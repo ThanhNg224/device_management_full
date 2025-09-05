@@ -47,6 +47,44 @@ const VersionApkController = {
     }
   },
 
+  // getVersion: async (req, res) => {
+  //   try {
+  //     const versions = await VersionApk.find()
+  //       .sort({ createAT: -1 }) // mới nhất lên đầu
+  //       .select('_id versionCode versionName fileUrl fileSize sha256 note createAT');
+
+  //     const data = versions.map(v => {
+  //       // Lấy tên file từ fileUrl
+  //       const filename = v.fileUrl.split('/').pop();
+  //       const filePath = path.join(__dirname, '../uploads', filename);
+
+  //       // Kiểm tra file có tồn tại trong uploads không
+  //       const fileExists = fs.existsSync(filePath);
+
+  //       return {
+  //         id: v._id,
+  //         versionCode: v.versionCode,
+  //         versionName: v.versionName,
+  //         fileUrl: v.fileUrl,
+  //         fileSize: v.fileSize,
+  //         sha256: v.sha256,
+  //         note: v.note,
+  //         createdAt: v.createAT,
+  //         status: fileExists ? 1 : 0,
+  //         statusTitle: fileExists ? 'Ready' : 'Corrupted or Missing APK'
+  //       };
+  //     });
+
+  //     res.status(200).json({
+  //       message: 'Danh sách version',
+  //       data
+  //     });
+  //   } catch (err) {
+  //     console.error(err);
+  //     res.status(500).json({ message: 'Lỗi server', error: err.message });
+  //   }
+  // },
+
   getVersion: async (req, res) => {
     try {
       const versions = await VersionApk.find()
@@ -58,20 +96,34 @@ const VersionApkController = {
         const filename = v.fileUrl.split('/').pop();
         const filePath = path.join(__dirname, '../uploads', filename);
 
-        // Kiểm tra file có tồn tại trong uploads không
-        const fileExists = fs.existsSync(filePath);
+        let status = 0;
+        let statusTitle = 'Corrupted or Missing APK';
+        let actualSize = 0;
+
+        if (fs.existsSync(filePath)) {
+          const stats = fs.statSync(filePath);
+          actualSize = stats.size;
+
+          if (actualSize > 0) {
+            status = 1;
+            statusTitle = 'Ready';
+          } else {
+            status = 0;
+            statusTitle = 'Corrupted or missing';
+          }
+        }
 
         return {
           id: v._id,
           versionCode: v.versionCode,
           versionName: v.versionName,
           fileUrl: v.fileUrl,
-          fileSize: v.fileSize,
+          fileSize: actualSize, // trả về kích thước thực tế
           sha256: v.sha256,
           note: v.note,
           createdAt: v.createAT,
-          status: fileExists ? 1 : 0,
-          statusTitle: fileExists ? 'Ready' : 'Corrupted or Missing APK'
+          status,
+          statusTitle
         };
       });
 
@@ -202,9 +254,12 @@ const VersionApkController = {
       }
 
       // Tạo message giống uploadFile
+      const fileUrl = version.fileUrl;
+      const filename = path.basename(fileUrl);
+
       const message = {
-        apkUrl: version.fileUrl,
-        filename: "version.versionName",
+        apkUrl: fileUrl,
+        filename: filename,
         namePackage: "com.atin.arcface",
         type: "apk:update",
       };
