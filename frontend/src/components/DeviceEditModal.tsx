@@ -107,12 +107,7 @@ export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditM
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="ipAddress">IP Address</Label>
-                <Input
-                  id="ipAddress"
-                  value={editedDevice.ipAddress}
-                  onChange={(e) => handleInputChange("ipAddress", e.target.value)}
-                  className="font-mono"
-                />
+                <p className="text-sm font-mono bg-muted p-2 rounded">{device.ipAddress}</p>
               </div>
             </div>
           </div>

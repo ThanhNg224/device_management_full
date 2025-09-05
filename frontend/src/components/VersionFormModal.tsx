@@ -32,6 +32,7 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
     mode === "edit" ? version?.note || "" : ""
   )
   const [versionCodeError, setVersionCodeError] = React.useState<string | null>(null)
+  const [versionCodeFormatError, setVersionCodeFormatError] = React.useState<string | null>(null)
 
   const { showToast } = useToast()
 
@@ -54,8 +55,9 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Clear previous version code error
+    // Clear previous version code errors
     setVersionCodeError(null)
+    setVersionCodeFormatError(null)
     
     if (mode === "add") {
       // Validation for add mode
@@ -65,14 +67,14 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
       }
       
       if (!versionCode.trim()) {
-        showToast("Please enter a version code", "error")
+        setVersionCodeFormatError("Please enter a version code")
         return
       }
 
       // Validate semantic version format (x.y.z)
       const versionRegex = /^\d+\.\d+\.\d+$/
       if (!versionRegex.test(versionCode.trim())) {
-        showToast("Version code must be in format x.y.z (e.g., 1.3.6)", "error")
+        setVersionCodeFormatError("Version code must be in format x.y.z (e.g., 1.3.6)")
         return
       }
 
@@ -82,7 +84,6 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
       )
       if (duplicateVersion) {
         setVersionCodeError("Version code đã tồn tại. Vui lòng sử dụng version code khác.")
-        showToast("Version code đã tồn tại. Vui lòng sử dụng version code khác.", "error")
         return
       }
     }
@@ -130,7 +131,6 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
       // Check for duplicate version error (backup server-side validation)
       if (errorMessage.includes("versionCode") && errorMessage.includes("tồn tại")) {
         setVersionCodeError("Version code đã tồn tại. Vui lòng sử dụng version code khác.")
-        showToast("Version code đã tồn tại. Vui lòng sử dụng version code khác.", "error")
       } else {
         showToast(errorMessage, "error")
       }
@@ -191,25 +191,38 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
                     const newValue = e.target.value
                     setVersionCode(newValue)
                     
-                    // Clear previous error when user starts typing
+                    // Clear previous errors when user starts typing
                     if (versionCodeError) {
                       setVersionCodeError(null)
                     }
+                    if (versionCodeFormatError) {
+                      setVersionCodeFormatError(null)
+                    }
                     
-                    // Real-time duplicate check (only in add mode and when value is not empty)
+                    // Real-time validation and duplicate check
                     if (mode === "add" && newValue.trim()) {
-                      const duplicateVersion = existingVersions.find(
-                        v => v.version_code === newValue.trim()
-                      )
-                      if (duplicateVersion) {
-                        setVersionCodeError("Version code đã tồn tại")
+                      // Check format first
+                      const versionRegex = /^\d+\.\d+\.\d+$/
+                      if (!versionRegex.test(newValue.trim())) {
+                        setVersionCodeFormatError("Version code must be in format x.y.z (e.g., 1.3.6)")
+                      } else {
+                        // Check for duplicates only if format is valid
+                        const duplicateVersion = existingVersions.find(
+                          v => v.version_code === newValue.trim()
+                        )
+                        if (duplicateVersion) {
+                          setVersionCodeError("Version code đã tồn tại")
+                        }
                       }
                     }
                   }}
                   placeholder="e.g., 1.3.6"
                   required
-                  className={versionCodeError ? "border-red-500" : ""}
+                  className={versionCodeError || versionCodeFormatError ? "border-red-500" : ""}
                 />
+                {versionCodeFormatError && (
+                  <p className="text-xs text-red-600">{versionCodeFormatError}</p>
+                )}
                 {versionCodeError && (
                   <p className="text-xs text-red-600">{versionCodeError}</p>
                 )}
@@ -234,11 +247,15 @@ export function VersionFormModal({ mode, version, existingVersions = [], onClose
             <Input
               id="versionName"
               value={versionName}
-              onChange={(e) => setVersionName(e.target.value)}
+              onChange={(e) => {
+                // Allow letters, numbers, spaces and underscore only
+                const cleaned = e.target.value.replace(/[^\w\s]/g, '')
+                setVersionName(cleaned)
+              }}
               placeholder="e.g., Multi Faces Detection"
             />
             <p className="text-xs text-muted-foreground">
-              Descriptive name for this version (optional)
+              Descriptive name for this version (optional). Allowed characters: letters, numbers, spaces, and underscore (_).
             </p>
           </div>
 
