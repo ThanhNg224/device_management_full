@@ -33,7 +33,7 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Basic Information</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">Device Code</label>
                 <p className="text-sm font-semibold">{device.deviceCode}</p>
@@ -41,10 +41,6 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">Device Name</label>
                 <p className="text-sm">{device.deviceName}</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Unit/Company</label>
-                <p className="text-sm">{device.unitCompany}</p>
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
@@ -75,14 +71,6 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                 <label className="text-sm font-medium text-muted-foreground">Location</label>
                 <p className="text-sm">{device.location}</p>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Area</label>
-                <p className="text-sm">{device.area}</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Language</label>
-                <p className="text-sm">{device.language}</p>
-              </div>
             </div>
           </div>
 
@@ -97,18 +85,10 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
           {/* Network Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Network Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">IMEI</label>
-                <p className="text-sm font-mono">{device.imei}</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Server Address</label>
-                <p className="text-sm font-mono">{device.serverAddress}</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Mac Address</label>
-                <p className="text-sm font-mono">{device.macAddress}</p>
+                <label className="text-sm font-medium text-muted-foreground">IP Address</label>
+                <p className="text-sm font-mono">{device.ipAddress}</p>
               </div>
             </div>
           </div>
@@ -116,19 +96,7 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
           {/* Configuration */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Configuration</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Temperature Threshold</label>
-                <p className="text-sm">{device.temperatureThreshold}°C</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Face Threshold</label>
-                <p className="text-sm">{device.faceThreshold}%</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Distance</label>
-                <p className="text-sm">{device.distance}m</p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">Last Connected</label>
                 <p className="text-sm font-mono">{device.lastConnected}</p>

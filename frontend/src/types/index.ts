@@ -6,6 +6,7 @@ export interface Device {
   lastConnected: string
   location: string
   version: string
+  ipAddress: string  // New field from backend
   lastPerformance: {
     cpu: number
     ram: number

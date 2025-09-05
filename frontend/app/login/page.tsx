@@ -46,6 +46,10 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      // Trim username and password before sending
+      const trimmedUsername = formData.username.trim()
+      const trimmedPassword = formData.password.trim()
+
       // Build API URL from environment variable or fallback
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.222:4000"
       const response = await fetch(`${apiBaseUrl}/auth/login`, {
@@ -54,8 +58,8 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
+          username: trimmedUsername,
+          password: trimmedPassword
         }),
       })
 

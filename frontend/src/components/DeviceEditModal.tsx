@@ -106,29 +106,11 @@ export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditM
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Network Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="imei">IMEI</Label>
+                <Label htmlFor="ipAddress">IP Address</Label>
                 <Input
-                  id="imei"
-                  value={editedDevice.imei}
-                  onChange={(e) => handleInputChange("imei", e.target.value)}
-                  className="font-mono"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="serverAddress">Server Address</Label>
-                <Input
-                  id="serverAddress"
-                  value={editedDevice.serverAddress}
-                  onChange={(e) => handleInputChange("serverAddress", e.target.value)}
-                  className="font-mono"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="macAddress">MAC Address</Label>
-                <Input
-                  id="macAddress"
-                  value={editedDevice.macAddress}
-                  onChange={(e) => handleInputChange("macAddress", e.target.value)}
+                  id="ipAddress"
+                  value={editedDevice.ipAddress}
+                  onChange={(e) => handleInputChange("ipAddress", e.target.value)}
                   className="font-mono"
                 />
               </div>
@@ -138,53 +120,8 @@ export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditM
           {/* Configuration - Editable */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Configuration</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="temperatureThreshold">Temperature Threshold (°C)</Label>
-                <Input
-                  id="temperatureThreshold"
-                  type="number"
-                  value={editedDevice.temperatureThreshold}
-                  onChange={(e) => handleInputChange("temperatureThreshold", Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="faceThreshold">Face Threshold (%)</Label>
-                <Input
-                  id="faceThreshold"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={editedDevice.faceThreshold}
-                  onChange={(e) => handleInputChange("faceThreshold", Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="distance">Distance (m)</Label>
-                <Input
-                  id="distance"
-                  type="number"
-                  step="0.1"
-                  value={editedDevice.distance}
-                  onChange={(e) => handleInputChange("distance", Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="language">Language</Label>
-                <Input
-                  id="language"
-                  value={editedDevice.language}
-                  onChange={(e) => handleInputChange("language", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="area">Area</Label>
-                <Input
-                  id="area"
-                  value={editedDevice.area}
-                  onChange={(e) => handleInputChange("area", e.target.value)}
-                />
-              </div>
+            <div className="text-sm text-muted-foreground">
+              Device configuration settings are managed through the Device Settings section below.
             </div>
           </div>
 
