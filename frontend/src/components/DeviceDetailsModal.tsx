@@ -120,9 +120,11 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
           {/* Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Settings</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Auto Reboot</label>
+
+            {/* Put Auto Reboot on its own row so it wraps like other fields */}
+            <div className="mt-2 space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Auto Reboot</label>
+              <div>
                 <Badge
                   variant={device.autoReboot ? "default" : "secondary"}
                   className={
@@ -134,6 +136,9 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                   {device.autoReboot ? "Enabled" : "Disabled"}
                 </Badge>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
               <div className="space-y-3">
                 <label className="text-sm font-medium text-muted-foreground">Volume</label>
                 <div className="flex items-center gap-4">
