@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { Device } from "../types"
+import { useToast } from "./Toast"
 
 interface DeviceDetailsModalProps {
   device: Device | null
@@ -16,7 +17,15 @@ interface DeviceDetailsModalProps {
 export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDetailsModalProps) {
   if (!device) return null
 
+  const { showToast } = useToast()
+
   const handleEdit = () => {
+    // Prevent editing when device is offline
+    if (device.status !== "Online") {
+      showToast("Device is offline. Cannot edit configuration.", "error")
+      return
+    }
+
     if (onEdit) {
       onEdit(device)
     }
@@ -62,14 +71,18 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                 </Badge>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Version</label>
+                <label className="text-sm font-medium text-muted-foreground">Location</label>
+                <p className="text-sm">{device.location}</p>
+              </div>
+            </div>
+
+            {/* Put Version on its own row so it wraps like other fields */}
+            <div className="mt-2 space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Version</label>
+              <div>
                 <Badge variant="outline" className="font-mono text-xs">
                   {device.version}
                 </Badge>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Location</label>
-                <p className="text-sm">{device.location}</p>
               </div>
             </div>
           </div>
@@ -107,9 +120,11 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
           {/* Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Settings</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Auto Reboot</label>
+
+            {/* Put Auto Reboot on its own row so it wraps like other fields */}
+            <div className="mt-2 space-y-1">
+              <label className="text-sm font-medium text-muted-foreground">Auto Reboot</label>
+              <div>
                 <Badge
                   variant={device.autoReboot ? "default" : "secondary"}
                   className={
@@ -121,6 +136,9 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
                   {device.autoReboot ? "Enabled" : "Disabled"}
                 </Badge>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
               <div className="space-y-3">
                 <label className="text-sm font-medium text-muted-foreground">Volume</label>
                 <div className="flex items-center gap-4">
@@ -255,7 +273,11 @@ export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDe
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-3 pt-6 border-t">
-          <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700 px-6 py-2">
+          <Button
+            onClick={() => (device.status === "Online" ? handleEdit() : showToast("Device is offline. Cannot edit configuration.", "error"))}
+            className={`px-6 py-2 ${device.status !== "Online" ? 'opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+            disabled={device.status !== "Online"}
+          >
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>

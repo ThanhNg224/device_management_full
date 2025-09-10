@@ -10,7 +10,7 @@ const performanceSchema = new mongoose.Schema({
   cpu: Number,
   ram: Number,
   temp: Number,
-  rom: Number,
+  rom: String,
 }, { _id: false });
 
 const deviceSchema = new mongoose.Schema({

@@ -47,44 +47,6 @@ const VersionApkController = {
     }
   },
 
-  // getVersion: async (req, res) => {
-  //   try {
-  //     const versions = await VersionApk.find()
-  //       .sort({ createAT: -1 }) // mới nhất lên đầu
-  //       .select('_id versionCode versionName fileUrl fileSize sha256 note createAT');
-
-  //     const data = versions.map(v => {
-  //       // Lấy tên file từ fileUrl
-  //       const filename = v.fileUrl.split('/').pop();
-  //       const filePath = path.join(__dirname, '../uploads', filename);
-
-  //       // Kiểm tra file có tồn tại trong uploads không
-  //       const fileExists = fs.existsSync(filePath);
-
-  //       return {
-  //         id: v._id,
-  //         versionCode: v.versionCode,
-  //         versionName: v.versionName,
-  //         fileUrl: v.fileUrl,
-  //         fileSize: v.fileSize,
-  //         sha256: v.sha256,
-  //         note: v.note,
-  //         createdAt: v.createAT,
-  //         status: fileExists ? 1 : 0,
-  //         statusTitle: fileExists ? 'Ready' : 'Corrupted or Missing APK'
-  //       };
-  //     });
-
-  //     res.status(200).json({
-  //       message: 'Danh sách version',
-  //       data
-  //     });
-  //   } catch (err) {
-  //     console.error(err);
-  //     res.status(500).json({ message: 'Lỗi server', error: err.message });
-  //   }
-  // },
-
   getVersion: async (req, res) => {
     try {
       const versions = await VersionApk.find()
@@ -144,7 +106,17 @@ const VersionApkController = {
       const errorVersions = versions.filter(v => {
         const filename = v.fileUrl.split('/').pop();
         const filePath = path.join(__dirname, '../uploads', filename);
-        return !fs.existsSync(filePath);
+
+        if (!fs.existsSync(filePath)) {
+          return true; // ❌ file không tồn tại
+        }
+
+        const stats = fs.statSync(filePath);
+        if (stats.size === 0) {
+          return true; // ❌ file tồn tại nhưng rỗng (0kb)
+        }
+
+        return false; // ✅ file ok
       });
 
       const idsToDelete = errorVersions.map(v => v._id);
@@ -162,6 +134,7 @@ const VersionApkController = {
       res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
   },
+
 
   removeVersion: async (req, res) => {
     try {

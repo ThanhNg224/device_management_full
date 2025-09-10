@@ -12,7 +12,7 @@ const websocketController = (server) => {
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message);
-        const { deviceCode, version, config, performance, location, timestamp, ipAddress } = data;
+        const { deviceCode, version, config, performance, timestamp, ipAddress } = data;
         if (!deviceCode) return;
 
         clients.set(ws, { deviceCode, lastPing: Date.now() });
@@ -27,7 +27,7 @@ const websocketController = (server) => {
               config,
               ipAddress,
               lastPerformance: performance,
-              location,
+              location: "Sunworld",
             },
           },
           { upsert: true }
