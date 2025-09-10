@@ -11,11 +11,13 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.example.testnative.service.GetBrightnessService
 import com.example.testnative.service.GetHardWarePerformance
 import com.example.testnative.service.GetImeiNumberService
+import com.example.testnative.service.GetIpAddressService
 import com.example.testnative.service.GetLevelVolumeService
 import com.example.testnative.service.GetVersionAppService
 import com.example.testnative.service.WebSocketClient
@@ -27,6 +29,7 @@ class HeartbeatService : Service() {
     private lateinit var volume: GetLevelVolumeService
     private lateinit var brightness: GetBrightnessService
     private lateinit var versionApp: GetVersionAppService
+    private lateinit var ipAddress: GetIpAddressService
     private lateinit var client: WebSocketClient
 
     private var imei = "Đang kiểm tra..."
@@ -35,6 +38,7 @@ class HeartbeatService : Service() {
     private var cpuPercent = 0f
     private var ramPercent = 0f
     private var tempCelsius = 0f
+    private var romPercent = ""
 
     private val heartbeatHandler = Handler(Looper.getMainLooper())
     private val heartbeatRunnable = object : Runnable {
@@ -51,8 +55,9 @@ class HeartbeatService : Service() {
         // Khởi tạo các service
         serialService = GetImeiNumberService(this)
         versionApp = GetVersionAppService(this)
+        ipAddress = GetIpAddressService(this)
         val sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-        val serverIp = sharedPreferences.getString("server_ip", "") ?: ""
+        val serverIp = sharedPreferences.getString("server_ip", MyConfig.IP_DEFAULT) ?: MyConfig.IP_DEFAULT
         client = WebSocketClient(applicationContext, serverIp)
 
         // Volume
@@ -70,12 +75,14 @@ class HeartbeatService : Service() {
         brightness.startObserving()
 
         // Performance
-        performance = GetHardWarePerformance { cpu, ram, temp ->
+        performance = GetHardWarePerformance(this) { cpu, ram, temp, rom ->
             cpuPercent = cpu
             ramPercent = ram
             tempCelsius = temp
+            romPercent = rom
         }
         performance.startObserving()
+        versionApp.startAutoUpdate()
 
         // Xử lý permission và khởi động
         if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
@@ -122,7 +129,8 @@ class HeartbeatService : Service() {
         client.connectServer(
             deviceCode = imei,
             version = versionApp.getVersionName(),
-            location = "ZONE_2"
+            location = "Sunworld",
+            ipAddress = ipAddress.getIpAddress()
         )
         heartbeatHandler.post(heartbeatRunnable)
     }
@@ -135,6 +143,7 @@ class HeartbeatService : Service() {
         client.currentPerformance = JSONObject().apply {
             put("cpu", cpuPercent * 100)
             put("ram", ramPercent * 100)
+            put("rom", romPercent)
             put("temp", tempCelsius)
         }
         client.sendHeartbeat(
@@ -145,9 +154,11 @@ class HeartbeatService : Service() {
             performance = JSONObject().apply {
                 put("cpu", cpuPercent * 100)
                 put("ram", ramPercent * 100)
+                put("rom", romPercent)
                 put("temp", tempCelsius)
             },
-            version = versionApp.getVersionName()
+            version = versionApp.getVersionName(),
+            ipAddress = ipAddress.getIpAddress()
         )
     }
 
@@ -156,6 +167,7 @@ class HeartbeatService : Service() {
         brightness.stopObserving()
         volume.stopObserving()
         performance.stopObserving()
+        versionApp.stopAutoUpdate()
         heartbeatHandler.removeCallbacks(heartbeatRunnable)
         client.close()
     }

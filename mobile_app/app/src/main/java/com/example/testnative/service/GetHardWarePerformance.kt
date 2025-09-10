@@ -1,14 +1,20 @@
 package com.example.testnative.service
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.StatFs
+import android.os.storage.StorageManager
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
 import android.util.Log
 
 class GetHardWarePerformance(
-    private val onUpdate: (cpu: Float, ram: Float, temp: Float) -> Unit
+    private val context: Context,
+    private val onUpdate: (cpu: Float, ram: Float, temp: Float, room: String) -> Unit
 ) {
     private val handler = Handler(Looper.getMainLooper())
     private var isObserving = false
@@ -21,10 +27,11 @@ class GetHardWarePerformance(
             val cpu = getTotalCpuUsage()
             val ram = getRamUsage()
             val temp = getCpuTemperature()
+            val rom = getRomUsage()
 
 //            Log.d("Hardware", "CPU: ${cpu * 100}%, RAM: ${ram * 100}%, Temp: $temp°C")
 
-            onUpdate(cpu, ram, temp)
+            onUpdate(cpu, ram, temp, rom)
 
             if (isObserving) {
                 handler.postDelayed(this, 1000) // Cập nhật mỗi 1 giây
@@ -101,6 +108,49 @@ class GetHardWarePerformance(
         } catch (e: Exception) {
             e.printStackTrace()
             0f
+        }
+    }
+
+    @SuppressLint("DiscouragedPrivateApi", "ServiceCast")
+    private fun getRomUsage(): String {
+        return try {
+            val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
+            val storageVolumeClazz = Class.forName("android.os.storage.StorageVolume")
+            val getPath = storageVolumeClazz.getMethod("getPath")
+
+            var total: Long = 0
+            var free: Long = 0
+
+            for (volume in storageManager.storageVolumes) {
+                val path = getPath.invoke(volume) as String
+                val stat = StatFs(path)
+                val blockSize: Long
+                val totalBlocks: Long
+                val availableBlocks: Long
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    blockSize = stat.blockSizeLong
+                    totalBlocks = stat.blockCountLong
+                    availableBlocks = stat.availableBlocksLong
+                } else {
+                    blockSize = stat.blockSize.toLong()
+                    totalBlocks = stat.blockCount.toLong()
+                    availableBlocks = stat.availableBlocks.toLong()
+                }
+
+                total += totalBlocks * blockSize
+                free += availableBlocks * blockSize
+            }
+
+            val used = total - free
+            val gb = 1024f * 1024f * 1024f
+            val usedGB = used / gb
+            val totalGB = total / gb
+
+            String.format("%.2f/%.0f", usedGB, totalGB)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "0/0"
         }
     }
 
