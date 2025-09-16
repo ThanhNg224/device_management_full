@@ -27,7 +27,6 @@ const websocketController = (server) => {
               config,
               ipAddress,
               lastPerformance: performance,
-              location: "Sunworld",
             },
           },
           { upsert: true }

@@ -5,7 +5,7 @@ const os = require('os');
 const http = require('http');
 const { websocketController } = require('./controller/socketController');
 const cors = require('cors');
-const path = require('path');
+const path = require('path'); 
 require("dotenv").config();
 
 const app = express();
@@ -26,6 +26,7 @@ mongoose.connect('mongodb://localhost:27017/myapp', {
   console.log('✅ Đã kết nối MongoDB');
   const Device = require('./model/device.model');
   await Device.updateMany({}, { $set: { status: 0 } });
+  require("./utils/callApiGetArea");
 })
 .catch((err) => console.error('❌ Lỗi kết nối MongoDB:', err));
 

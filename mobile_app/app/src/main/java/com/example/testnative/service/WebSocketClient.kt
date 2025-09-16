@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -11,6 +12,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.DataOutputStream
 import java.util.concurrent.TimeUnit
 
 class WebSocketClient(
@@ -38,14 +40,14 @@ class WebSocketClient(
     // Heartbeat task
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
-            if (isConnected) {
-                try {
-                    sendHeartbeat(currentConfig, currentPerformance, lastVersion, lastIpAddress)
-                } catch (e: Exception) {
-                    Log.e("WebSocketClient", "⚠️ Heartbeat error: ${e.message}")
-                }
-                mainHandler.postDelayed(this, 3_000)
-            }
+//            if (isConnected) {
+//                try {
+//                    sendHeartbeat(currentConfig, currentPerformance, lastVersion, lastIpAddress)
+//                } catch (e: Exception) {
+//                    Log.e("WebSocketClient", "⚠️ Heartbeat error: ${e.message}")
+//                }
+//                mainHandler.postDelayed(this, 3_000)
+//            }
         }
     }
 
@@ -150,8 +152,10 @@ class WebSocketClient(
     }
 
     private fun handleMessage(message: String) {
+        Log.e("handleMessage", message )
         try {
             val json = JSONObject(message)
+            if(json.optString("action") == "reboot") rebootWithRoot()
             val type = json.optString("type", "")
             when (type) {
                 "apk:update" -> {
@@ -159,6 +163,7 @@ class WebSocketClient(
                 }
                 else -> Log.w("WebSocketClient", "⚠️ Unknown type: $type")
             }
+
         } catch (e: JSONException) {
             Log.e("WebSocketClient", "❌ JSON parse error: ${e.message}")
         }
@@ -199,6 +204,22 @@ class WebSocketClient(
             }
         } catch (e: Exception) {
             Log.e("WebSocketClient", "❌ Error sending APK result: ${e.message}")
+        }
+    }
+
+    private fun rebootWithRoot() {
+        try {
+            val process = Runtime.getRuntime().exec("su")
+            val os = DataOutputStream(process.outputStream)
+            os.writeBytes("reboot\n")
+            os.flush()
+            os.close()
+            process.waitFor()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context, "Thiết bị chưa root hoặc từ chối quyền root", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

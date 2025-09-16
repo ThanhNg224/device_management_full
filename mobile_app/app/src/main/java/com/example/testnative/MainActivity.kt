@@ -1,13 +1,13 @@
 package com.example.testnative
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -51,7 +51,7 @@ import com.example.testnative.service.GetIpAddressService
 import com.example.testnative.service.GetLevelVolumeService
 import com.example.testnative.service.GetVersionAppService
 import com.example.testnative.service.WebSocketClient
-import org.json.JSONObject
+import java.io.DataOutputStream
 
 class MainActivity : ComponentActivity() {
 
@@ -89,10 +89,6 @@ class MainActivity : ComponentActivity() {
         var serverIp = sharedPreferences.getString("server_ip", null)
         if (serverIp == null) {
             serverIp = MyConfig.IP_DEFAULT
-//            val intent = Intent(this, IpInputActivity::class.java)
-//            startActivity(intent)
-//            finish()
-//            return
         }
 
         // Khởi động service
@@ -184,7 +180,8 @@ class MainActivity : ComponentActivity() {
                                 client.close() // Đóng WebSocket trước khi đổi IP
                                 val intent = Intent(this@MainActivity, IpInputActivity::class.java)
                                 startActivity(intent)
-                            }
+                            },
+                            onReboot = { rebootWithRoot() }
                         )
                     }
                 }
@@ -239,6 +236,31 @@ class MainActivity : ComponentActivity() {
         heartbeatHandler.removeCallbacks(heartbeatRunnable)
         client.close()
     }
+
+    private fun rebootWithRoot() {
+//        try {
+//            val process = Runtime.getRuntime().exec("su")
+//            val os = DataOutputStream(process.outputStream)
+//            os.writeBytes("reboot\n")
+//            os.flush()
+//            os.close()
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            Toast.makeText(this, "Thiết bị chưa root hoặc từ chối quyền root", Toast.LENGTH_SHORT).show()
+//        }
+
+        try {
+            val process = Runtime.getRuntime().exec("su")
+            val os = DataOutputStream(process.outputStream)
+            os.writeBytes("reboot\n")
+            os.flush()
+            os.close()
+            process.waitFor()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Thiết bị chưa root hoặc từ chối quyền root", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 @Composable
@@ -250,7 +272,8 @@ fun DeviceInfoScreen(
     volumePercent: Int,
     brightnessPercent: Int,
     version: String,
-    onChangeIpClicked: () -> Unit
+    onChangeIpClicked: () -> Unit,
+    onReboot: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -277,6 +300,14 @@ fun DeviceInfoScreen(
                 .padding(bottom = 16.dp)
         ) {
             Text("Đổi IP Server")
+        }
+        Button(
+            onClick = onReboot,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Text("Reboot")
         }
 
         // Card Thông tin thiết bị
