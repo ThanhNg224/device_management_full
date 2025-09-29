@@ -1,14 +1,13 @@
 "use client"
-import { Save, X } from "lucide-react"
+import { Save, X, RotateCcw } from "lucide-react"
 import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
+import { useToast } from "./Toast"
 import type { Device } from "../types"
 
 interface DeviceEditModalProps {
@@ -20,6 +19,8 @@ interface DeviceEditModalProps {
 
 export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditModalProps) {
   const [editedDevice, setEditedDevice] = React.useState<Device | null>(null)
+  const [isRebooting, setIsRebooting] = React.useState(false)
+  const { showToast } = useToast()
 
   React.useEffect(() => {
     if (device) {
@@ -33,12 +34,42 @@ export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditM
     try {
       onSave(editedDevice)
       onClose()
-      // You can add a success toast here if you have a toast library
-      console.log("Device configuration saved successfully")
+      showToast("Device configuration saved successfully", "success")
     } catch (error) {
       console.error("Failed to save device configuration:", error)
-      // You can add an error toast here if you have a toast library
-      alert("Failed to save device configuration")
+      showToast("Failed to save device configuration", "error")
+    }
+  }
+
+  const handleReboot = async () => {
+    if (!device) return
+    
+    try {
+      setIsRebooting(true)
+      
+      const response = await fetch('http://192.168.1.222:4000/api/device/reboot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          deviceCode: device.deviceCode
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        showToast(data.message || `Reboot command sent to device ${device.deviceCode}`, "success")
+      } else {
+        throw new Error(data.message || "Failed to send reboot command")
+      }
+    } catch (error) {
+      console.error("Failed to reboot device:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to send reboot command"
+      showToast(errorMessage, "error")
+    } finally {
+      setIsRebooting(false)
     }
   }
 
@@ -124,16 +155,29 @@ export function DeviceEditModal({ device, isOpen, onClose, onSave }: DeviceEditM
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b pb-2">Device Settings</h3>
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
                 <div className="space-y-0.5">
-                  <Label htmlFor="autoReboot">Auto Reboot</Label>
-                  <p className="text-sm text-muted-foreground">Enable automatic device restart</p>
+                  <Label className="text-base font-medium">Device Reboot</Label>
+                  <p className="text-sm text-muted-foreground">Send reboot command to restart the device</p>
                 </div>
-                <Switch
-                  id="autoReboot"
-                  checked={editedDevice.autoReboot}
-                  onCheckedChange={(checked) => handleInputChange("autoReboot", checked)}
-                />
+                <Button
+                  onClick={handleReboot}
+                  disabled={isRebooting || device.status !== "Online"}
+                  variant="outline"
+                  className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100 hover:border-orange-400 disabled:opacity-50"
+                >
+                  {isRebooting ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                      Rebooting...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Reboot Device
+                    </>
+                  )}
+                </Button>
               </div>
 
               <div className="space-y-4">

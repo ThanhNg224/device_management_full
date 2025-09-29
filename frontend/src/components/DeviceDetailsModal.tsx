@@ -15,9 +15,9 @@ interface DeviceDetailsModalProps {
 }
 
 export function DeviceDetailsModal({ device, isOpen, onClose, onEdit }: DeviceDetailsModalProps) {
-  if (!device) return null
-
   const { showToast } = useToast()
+  
+  if (!device) return null
 
   const handleEdit = () => {
     // Prevent editing when device is offline
