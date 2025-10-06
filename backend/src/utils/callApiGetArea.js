@@ -6,7 +6,7 @@ import Const from "../res/const.js"
 async function fetchDevices() {
   try {
     // 1. Gọi API mới (không cần token nữa)
-    const res = await axios.get("https://api.sunworld.vn/swg-uat/all/faceid-connect/v1/api/v1/get-companies-info?swg-fid-skey=" + Const.keySWG_UAT);
+    const res = await axios.get(Const.urlSWG_UAT + "?swg-fid-skey=" + Const.keySWG_UAT);
     const companies = res.data?.data || [];
 
     if (!Array.isArray(companies)) throw new Error("API không trả về mảng data");
