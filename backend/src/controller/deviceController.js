@@ -11,6 +11,7 @@ const DeviceController = {
         createdAt: dayjs(device.createdAt).format("DD/MM/YYYY HH:mm"),
         updatedAt: dayjs(device.updatedAt).format("DD/MM/YYYY HH:mm"),
         lastConnected: dayjs(device.lastConnected).format("DD/MM/YYYY HH:mm"),
+      
       }));
 
       res.json({

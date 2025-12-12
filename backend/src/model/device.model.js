@@ -10,6 +10,7 @@ const performanceSchema = new mongoose.Schema({
   cpu: Number,
   ram: Number,
   temp: Number,
+  rom: String,
 }, { _id: false });
 
 const deviceSchema = new mongoose.Schema({
@@ -18,6 +19,7 @@ const deviceSchema = new mongoose.Schema({
   lastConnected: { type: Date, default: null },
   location: { type: String },
   version: { type: String },
+  ipAddress: {type: String },
   config: configSchema,
   lastPerformance: performanceSchema,
 }, { timestamps: true });

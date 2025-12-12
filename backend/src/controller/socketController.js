@@ -12,7 +12,7 @@ const websocketController = (server) => {
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message);
-        const { deviceCode, version, config, performance, location, timestamp } = data;
+        const { deviceCode, version, config, performance, timestamp, ipAddress } = data;
         if (!deviceCode) return;
 
         clients.set(ws, { deviceCode, lastPing: Date.now() });
@@ -25,8 +25,8 @@ const websocketController = (server) => {
               lastConnected: timestamp || new Date(),
               version,
               config,
+              ipAddress,
               lastPerformance: performance,
-              location,
             },
           },
           { upsert: true }
@@ -57,6 +57,7 @@ const websocketController = (server) => {
       }
     }
   }, 30000);
+
 };
 
 module.exports = {websocketController, clients};

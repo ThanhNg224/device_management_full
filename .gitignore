@@ -34,6 +34,7 @@
 /mobile_app/.cxx/
 /mobile_app/.settings/
 /mobile_app/.project
+/mobile_app/app/release/*
 
 # ========== General ==========
 *.iml
