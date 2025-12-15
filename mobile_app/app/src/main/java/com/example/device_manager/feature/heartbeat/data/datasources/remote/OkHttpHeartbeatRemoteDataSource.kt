@@ -20,7 +20,7 @@ import javax.inject.Singleton
 @Singleton
 class OkHttpHeartbeatRemoteDataSource @Inject constructor(
     private val okHttpClient: OkHttpClient,
-    private val dispatchers: DispatcherProvider,
+    dispatchers: DispatcherProvider,
 ) : HeartbeatRemoteDataSource {
     private val scope = CoroutineScope(dispatchers.io + SupervisorJob())
     private val messages = MutableSharedFlow<String>(extraBufferCapacity = 64)

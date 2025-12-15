@@ -57,7 +57,7 @@ class HeartbeatService : Service() {
 
     private val scope by lazy { CoroutineScope(dispatchers.default + SupervisorJob()) }
 
-    private var deviceCode: String = "Ž?ang ki ¯Ÿm tra..."
+    private var deviceCode: String = "Đang kiểm tra..."
     private var latestConfig: DeviceConfig = DeviceConfig(brightnessPercent = 0, volumePercent = 0)
     private var latestPerformance: DevicePerformance =
         DevicePerformance(cpuUsage = 0f, ramUsage = 0f, temperatureCelsius = 0f, romUsage = "0/0")
@@ -116,7 +116,7 @@ class HeartbeatService : Service() {
                         toastHandler.post {
                             Toast.makeText(
                                 applicationContext,
-                                "Thi §¨t b ¯< ch’øa root ho §úc t ¯® ch ¯`i quy ¯?n root",
+                                "Thiết bị chưa root hoặc từ chối quyền root",
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -135,14 +135,14 @@ class HeartbeatService : Service() {
                 "Heartbeat Service",
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "D ¯<ch v ¯ giA­m sA­t thi §¨t b ¯<"
+                description = "Dịch vụ giám sát thiết bị"
             }
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
         }
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Thi §¨t b ¯< Ž`ang giA­m sA­t")
-            .setContentText("Ž?ang g ¯-i d ¯_ li ¯Øu v ¯? h ¯Ø th ¯`ng")
+            .setContentTitle("Thiết bị đang giám sát")
+            .setContentText("Đang gửi dữ liệu về hệ thống")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)

@@ -73,7 +73,7 @@ class DeviceInfoViewModel @Inject constructor(
     }
 
     fun onPhoneStatePermissionDenied() {
-        _uiState.update { it.copy(serial = "KhA'ng cA3 quy ¯?n truy c §-p") }
+        _uiState.update { it.copy(serial = "Không có quyền truy cập") }
     }
 
     fun onChangeIpClicked() {
@@ -86,7 +86,7 @@ class DeviceInfoViewModel @Inject constructor(
         viewModelScope.launch {
             val success = handleRemoteCommandUseCase(RemoteCommand.Reboot, deviceCode = uiState.value.serial)
             if (!success) {
-                _events.emit(DeviceInfoUiEvent.ShowToast("Thi §¨t b ¯< ch’øa root ho §úc t ¯® ch ¯`i quy ¯?n root"))
+                _events.emit(DeviceInfoUiEvent.ShowToast("Thiết bị chưa root hoặc từ chối quyền root"))
             }
         }
     }
@@ -96,4 +96,3 @@ sealed interface DeviceInfoUiEvent {
     data object NavigateToIpInput : DeviceInfoUiEvent
     data class ShowToast(val message: String) : DeviceInfoUiEvent
 }
-

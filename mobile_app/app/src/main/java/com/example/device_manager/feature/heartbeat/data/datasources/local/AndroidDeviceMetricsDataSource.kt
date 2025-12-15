@@ -54,6 +54,7 @@ class AndroidDeviceMetricsDataSource(
         }
     }
 
+    @Suppress("UnusedAssignment")
     fun observeVolumePercent(): Flow<Int> = callbackFlow {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         var lastVolume = -1
@@ -69,8 +70,9 @@ class AndroidDeviceMetricsDataSource(
             override fun run() {
                 val current = getCurrentVolumePercent()
                 if (current != lastVolume) {
-                    lastVolume = current
                     trySend(current)
+                    @Suppress("UNUSED_VALUE")
+                    lastVolume = current
                 }
                 handler.postDelayed(this, 1000)
             }
@@ -82,6 +84,7 @@ class AndroidDeviceMetricsDataSource(
         awaitClose { handler.removeCallbacks(runnable) }
     }
 
+    @Suppress("UnusedAssignment")
     fun observePerformance(): Flow<DevicePerformance> = flow {
         var lastTotalTime = 0L
         var lastIdleTime = 0L
@@ -107,7 +110,9 @@ class AndroidDeviceMetricsDataSource(
                 val totalTime = user + nice + system + idle + iowait + irq + softirq
 
                 if (lastTotalTime == 0L || lastIdleTime == 0L) {
+                    @Suppress("UNUSED_VALUE")
                     lastTotalTime = totalTime
+                    @Suppress("UNUSED_VALUE")
                     lastIdleTime = idleTime
                     return 0f
                 }
@@ -115,11 +120,15 @@ class AndroidDeviceMetricsDataSource(
                 val totalDelta = totalTime - lastTotalTime
                 val idleDelta = idleTime - lastIdleTime
 
+                if (totalDelta == 0L) return 0f
+
+                val usage = (totalDelta - idleDelta).toFloat() / totalDelta.toFloat()
+                @Suppress("UNUSED_VALUE")
                 lastTotalTime = totalTime
+                @Suppress("UNUSED_VALUE")
                 lastIdleTime = idleTime
 
-                if (totalDelta == 0L) return 0f
-                (totalDelta - idleDelta).toFloat() / totalDelta.toFloat()
+                usage
             } catch (_: Exception) {
                 0f
             }
@@ -172,13 +181,9 @@ class AndroidDeviceMetricsDataSource(
                     val path = getPath.invoke(volume) as String
                     val stat = StatFs(path)
 
-                    val blockSize: Long
-                    val totalBlocks: Long
-                    val availableBlocks: Long
-
-                    blockSize = stat.blockSizeLong
-                    totalBlocks = stat.blockCountLong
-                    availableBlocks = stat.availableBlocksLong
+                    val blockSize: Long = stat.blockSizeLong
+                    val totalBlocks: Long = stat.blockCountLong
+                    val availableBlocks: Long = stat.availableBlocksLong
 
                     total += totalBlocks * blockSize
                     free += availableBlocks * blockSize
@@ -189,7 +194,7 @@ class AndroidDeviceMetricsDataSource(
                 val usedGB = used / gb
                 val totalGB = total / gb
 
-                String.format("%.2f/%.0f", usedGB, totalGB)
+                String.format(java.util.Locale.US, "%.2f/%.0f", usedGB, totalGB)
             } catch (_: Exception) {
                 "0/0"
             }
@@ -208,6 +213,7 @@ class AndroidDeviceMetricsDataSource(
         }
     }
 
+    @SuppressLint("HardwareIds")
     fun getSerialNumber(): String {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -218,7 +224,7 @@ class AndroidDeviceMetricsDataSource(
                 }
                 Build.getSerial()
             } else {
-                @Suppress("DEPRECATION")
+                @Suppress("DEPRECATION", "HardwareIds")
                 Build.SERIAL
             }
         } catch (e: SecurityException) {
@@ -239,6 +245,7 @@ class AndroidDeviceMetricsDataSource(
                 caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true -> {
                     val wifiManager =
                         context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                    @Suppress("DEPRECATION")
                     val ipInt = wifiManager.connectionInfo.ipAddress
                     String.format(
                         "%d.%d.%d.%d",

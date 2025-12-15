@@ -11,7 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlin.coroutines.resume
 
 class ApkUpdateRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val dispatchers: DispatcherProvider,
 ) : ApkUpdateRepository {
     override suspend fun downloadAndInstall(apkUrl: String, filename: String, namePackage: String): Boolean =

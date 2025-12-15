@@ -6,12 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.Cursor
-import android.net.Uri
-
-
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import java.io.File
 
 
@@ -107,7 +105,12 @@ class ApkUpdateManager(
         }
 
         try {
-            context.applicationContext.registerReceiver(receiver, filter)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                context.applicationContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                context.applicationContext.registerReceiver(receiver, filter)
+            }
             Log.d("ApkUpdateMgr", "✅ Registered download complete receiver")
         } catch (e: Exception) {
             Log.e("ApkUpdateMgr", "❌ Failed to register receiver", e)
@@ -116,16 +119,10 @@ class ApkUpdateManager(
         }
 
         // Tạo yêu cầu download file APK (giữ nguyên)
-        val request = DownloadManager.Request(Uri.parse(apkUrl)).apply {
+        val request = DownloadManager.Request(apkUrl.toUri()).apply {
             setTitle("Updating $namePackage")
             setDescription("Downloading APK update...")
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-
-            // (khuyến nghị) tránh khoảng trắng -> nhưng bạn đã quote lúc cài nên có thể giữ nguyên
-            // val safeFilename = filename.replace("\\s+".toRegex(), "_")
-            // setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, safeFilename)
-            // apkFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), safeFilename)
-
             setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
             setAllowedOverMetered(true)
             setAllowedOverRoaming(true)
@@ -222,7 +219,7 @@ class ApkUpdateManager(
     }
 
     // installViaRoot(...)
-    private fun installViaRoot(file: java.io.File) {
+    private fun installViaRoot(file: File) {
         val tmpPath = "/data/local/tmp/${file.name}"
         val src = shellQuote(file.absolutePath)
         val dst = shellQuote(tmpPath)
@@ -238,7 +235,7 @@ class ApkUpdateManager(
         }
 
         // cài lần 1 (update thường)
-        var installCmd = "pm install -r -g --user 0 $dst"
+        val installCmd = "pm install -r -g --user 0 $dst"
         var (code, out, err) = runSu(installCmd)
         Log.d("ApkUpdateMgr", "STDOUT:\n$out")
         if (err.isNotBlank()) Log.e("ApkUpdateMgr", "⚠STDERR:\n$err")
@@ -260,7 +257,7 @@ class ApkUpdateManager(
             val pkg = currentTargetPackage
             if (!pkg.isNullOrBlank()) {
                 Log.w("ApkUpdateMgr", "Detected UPDATE_INCOMPATIBLE → uninstall $pkg then reinstall")
-                val (uCode, uOut, uErr) = runSu("pm uninstall --user 0 ${shellQuote(pkg)}")
+                val (_, uOut, uErr) = runSu("pm uninstall --user 0 ${shellQuote(pkg)}")
                 Log.d("ApkUpdateMgr", "STDOUT (uninstall):\n$uOut")
                 if (uErr.isNotBlank()) Log.e("ApkUpdateMgr", "⚠STDERR (uninstall):\n$uErr")
                 val (code3, out3, err3) = runSu("pm install -g --user 0 $dst")
@@ -347,7 +344,7 @@ class ApkUpdateManager(
     private fun cleanup() {
         try {
             context.unregisterReceiver(downloadReceiver)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
 
         }
 
@@ -358,7 +355,7 @@ class ApkUpdateManager(
         }
     }
 
-    private fun getApkPackageName(context: android.content.Context, apkFile: java.io.File): String? {
+    private fun getApkPackageName(context: Context, apkFile: File): String? {
         val pm = context.packageManager
         return try {
             if (android.os.Build.VERSION.SDK_INT >= 33) {
