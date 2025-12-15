@@ -2,14 +2,16 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.jetbrains.kotlin.plugin.compose)
+    alias(libs.plugins.hilt.android)
+    id("kotlin-kapt")
 }
 
 android {
-    namespace = "com.example.testnative"
+    namespace = "com.example.device_manager"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.testnative"
+        applicationId = "com.example.device_manager"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -51,6 +53,10 @@ kotlin {
     }
 }
 
+kapt {
+    correctErrorTypes = true
+}
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -64,6 +70,8 @@ dependencies {
     implementation(libs.squareup.okhttp)
     implementation(libs.material3)
     implementation(libs.androidx.runtime)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

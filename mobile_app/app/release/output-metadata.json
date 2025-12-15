@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.testnative",
+  "applicationId": "com.example.device_manager",
   "variantName": "release",
   "elements": [
     {
