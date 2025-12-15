@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "testNative"
+rootProject.name = "device_manager"
 include(":app")
