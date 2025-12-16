@@ -9,20 +9,11 @@ import { Button } from "@/components/ui/button"
 import { LogIn, Eye, EyeOff, Shield, Users, Monitor } from "lucide-react"
 import Image from "next/image"
 import "./login.css"
-
-interface LoginResponse {
-  accessToken: string
-  refreshToken?: string
-  user: {
-    id: string
-    username: string
-    displayName: string
-    role: "admin" | "user"
-  }
-}
+import { makeAuthController } from "@/src/di/make-auth-controller"
 
 export default function LoginPage() {
   const router = useRouter()
+  const authController = React.useMemo(() => makeAuthController(), [])
   
   const [formData, setFormData] = React.useState({
     username: "",
@@ -34,11 +25,10 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   React.useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken")
-    if (accessToken) {
+    if (authController.isAuthenticated()) {
       router.replace("/")
     }
-  }, [router])
+  }, [router, authController])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,47 +40,8 @@ export default function LoginPage() {
       const trimmedUsername = formData.username.trim()
       const trimmedPassword = formData.password.trim()
 
-      // Build API URL from environment variable or fallback
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.222:4000"
-      const response = await fetch(`${apiBaseUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: trimmedUsername,
-          password: trimmedPassword
-        }),
-      })
-
-      if (response.ok) {
-        const data: LoginResponse = await response.json()
-        
-        // Store tokens in localStorage
-        localStorage.setItem("accessToken", data.accessToken)
-        if (data.refreshToken) {
-          localStorage.setItem("refreshToken", data.refreshToken)
-        }
-        
-        // Store user info
-        localStorage.setItem("user", JSON.stringify(data.user))
-        
-        // Redirect to dashboard
-        router.replace("/")
-      } else {
-        // Handle error response
-        let errorMessage = "Login failed"
-        
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.message || errorData.error || errorMessage
-        } catch {
-          // If response is not JSON, use status text
-          errorMessage = response.statusText || errorMessage
-        }
-        
-        setError(errorMessage)
-      }
+      await authController.login({ username: trimmedUsername, password: trimmedPassword })
+      router.replace("/")
     } catch (err) {
       console.error("Login error:", err)
       const errorMessage = err instanceof Error ? err.message : "Network error occurred"

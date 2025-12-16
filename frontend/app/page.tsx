@@ -1,8 +1,8 @@
 "use client"
 import dynamic from 'next/dynamic'
-import { Protected } from "@/src/components/Protected"
+import { Protected } from "@/src/features/auth/ui/protected"
 
-const Component = dynamic(() => import("../dashboard"), {
+const Component = dynamic(() => import("@/src/features/dashboard/ui/dashboard"), {
   ssr: false,
   loading: () => (
     <div className="flex h-screen w-full animate-pulse">
